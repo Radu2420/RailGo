@@ -1,0 +1,581 @@
+@model RailGo.ViewModels.AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+
+    var maxRouteTickets = Model.PopularRoutes.Any()
+        ? Model.PopularRoutes.Max(r => r.TicketsSold)
+        : 1;
+
+    var maxDailyRevenue = Model.DailyRevenue.Any()
+        ? Model.DailyRevenue.Max(d => d.Revenue)
+        : 1m;
+}
+
+<style>
+    .admin-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 34px 18px 80px;
+    }
+
+    .admin-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 34px;
+        padding: 46px 42px 128px;
+        margin-bottom: -88px;
+        color: white;
+        background:
+            radial-gradient(circle at 86% 14%, rgba(255,255,255,0.10), transparent 30%),
+            radial-gradient(circle at 14% 18%, rgba(239,35,60,0.45), transparent 33%),
+            linear-gradient(135deg, #121826 0%, #24283f 46%, #090b10 100%);
+        box-shadow: 0 30px 85px rgba(0,0,0,0.35);
+    }
+
+    .admin-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .admin-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #ef233c;
+        color: white;
+        font-weight: 950;
+        letter-spacing: -0.6px;
+        box-shadow: 0 14px 30px rgba(239,35,60,0.34);
+    }
+
+    .admin-brand span {
+        font-weight: 950;
+        font-size: 19px;
+    }
+
+    .admin-hero h1 {
+        max-width: 760px;
+        font-size: clamp(44px, 6vw, 78px);
+        line-height: 0.95;
+        letter-spacing: -2.4px;
+        font-weight: 950;
+        margin-bottom: 18px;
+    }
+
+    .admin-hero p {
+        max-width: 700px;
+        color: rgba(255,255,255,0.82);
+        font-size: 18px;
+        font-weight: 750;
+        margin: 0;
+    }
+
+    .stats-grid {
+        position: relative;
+        z-index: 4;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        border-radius: 26px;
+        padding: 22px;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+            rgba(15,23,42,0.95);
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: 0 24px 70px rgba(0,0,0,0.25);
+        color: white;
+    }
+
+    .stat-card span {
+        display: block;
+        color: rgba(255,255,255,0.58);
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .55px;
+        margin-bottom: 12px;
+    }
+
+    .stat-card strong {
+        display: block;
+        font-size: 32px;
+        line-height: 1;
+        font-weight: 950;
+        letter-spacing: -0.9px;
+    }
+
+    .stat-card small {
+        display: block;
+        margin-top: 10px;
+        color: rgba(255,255,255,0.56);
+        font-weight: 800;
+    }
+
+    .admin-section-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+
+    .admin-panel {
+        position: relative;
+        z-index: 4;
+        border-radius: 30px;
+        overflow: hidden;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+            rgba(15,23,42,0.95);
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: 0 28px 80px rgba(0,0,0,0.30);
+        color: white;
+    }
+
+    .admin-panel-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        padding: 20px 26px;
+        background: rgba(255,255,255,0.06);
+        border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .admin-panel-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 950;
+        letter-spacing: -0.5px;
+    }
+
+    .admin-panel-header span {
+        color: rgba(255,255,255,0.62);
+        font-size: 13px;
+        font-weight: 900;
+        text-align: right;
+    }
+
+    .admin-panel-body {
+        padding: 26px;
+    }
+
+    .route-list,
+    .daily-list {
+        display: grid;
+        gap: 14px;
+    }
+
+    .bar-row {
+        display: grid;
+        gap: 8px;
+    }
+
+    .bar-row-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        font-weight: 900;
+    }
+
+    .bar-row-top span {
+        color: rgba(255,255,255,0.82);
+    }
+
+    .bar-row-top strong {
+        color: white;
+    }
+
+    .bar-track {
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.08);
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #ef233c, #fb7185);
+    }
+
+    .profit-table-wrap {
+        overflow-x: auto;
+    }
+
+    .profit-table {
+        width: 100%;
+        min-width: 980px;
+        border-collapse: collapse;
+    }
+
+    .profit-table th {
+        text-align: left;
+        padding: 13px 14px;
+        background: rgba(255,255,255,0.08);
+        color: rgba(255,255,255,0.72);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.55px;
+        font-weight: 950;
+        border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .profit-table td {
+        padding: 14px;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        font-weight: 800;
+        vertical-align: middle;
+    }
+
+    .route-name {
+        font-weight: 950;
+        color: white;
+    }
+
+    .muted {
+        color: rgba(255,255,255,0.56);
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 7px 11px;
+        font-size: 12px;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    .status-pill.profit {
+        background: rgba(34,197,94,0.14);
+        color: #bbf7d0;
+        border: 1px solid rgba(34,197,94,0.24);
+    }
+
+    .status-pill.risk {
+        background: rgba(245,158,11,0.14);
+        color: #fde68a;
+        border: 1px solid rgba(245,158,11,0.24);
+    }
+
+    .status-pill.loss {
+        background: rgba(239,68,68,0.14);
+        color: #fecaca;
+        border: 1px solid rgba(239,68,68,0.24);
+    }
+
+    .recent-list {
+        display: grid;
+        gap: 14px;
+    }
+
+    .recent-booking {
+        border-radius: 20px;
+        padding: 16px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .recent-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 10px;
+    }
+
+    .recent-code {
+        font-weight: 950;
+        color: white;
+        word-break: break-word;
+    }
+
+    .recent-price {
+        color: #bbf7d0;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    .recent-meta {
+        color: rgba(255,255,255,0.62);
+        font-weight: 800;
+        font-size: 13px;
+    }
+
+    .empty-state {
+        padding: 26px;
+        border-radius: 22px;
+        background: rgba(255,255,255,0.045);
+        border: 1px dashed rgba(255,255,255,0.16);
+        color: rgba(255,255,255,0.68);
+        font-weight: 850;
+        text-align: center;
+    }
+
+    @@media (max-width: 1050px) {
+        .stats-grid,
+        .admin-section-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 720px) {
+        .stats-grid,
+        .admin-section-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .admin-hero {
+            padding: 38px 24px 118px;
+        }
+
+        .admin-panel-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .admin-panel-header span {
+            text-align: left;
+        }
+    }
+</style>
+
+<div class="admin-page">
+    <section class="admin-hero">
+        <div class="admin-brand">
+            <div class="admin-logo">RG</div>
+            <span>RailGo</span>
+        </div>
+
+        <h1>Dashboard administrare.</h1>
+
+        <p>
+            Monitorizează rezervările, veniturile, gradul de ocupare și profitabilitatea rutelor.
+        </p>
+    </section>
+
+    <section class="stats-grid">
+        <div class="stat-card">
+            <span>Rezervări</span>
+            <strong>@Model.TotalBookings</strong>
+            <small>Total rezervări înregistrate</small>
+        </div>
+
+        <div class="stat-card">
+            <span>Bilete</span>
+            <strong>@Model.TotalTickets</strong>
+            <small>Bilete generate</small>
+        </div>
+
+        <div class="stat-card">
+            <span>Venituri</span>
+            <strong>@Model.TotalRevenue.ToString("0.00") lei</strong>
+            <small>Total încasări simulate</small>
+        </div>
+
+        <div class="stat-card">
+            <span>Ocupare medie</span>
+            <strong>@Model.AverageOccupancyRate.ToString("0.00")%</strong>
+            <small>Calculată pe trenuri</small>
+        </div>
+    </section>
+
+    <section class="admin-section-grid">
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <h2>Rute populare</h2>
+                <span>După numărul de bilete</span>
+            </div>
+
+            <div class="admin-panel-body">
+                @if (Model.PopularRoutes.Any())
+                {
+                    <div class="route-list">
+                        @foreach (var route in Model.PopularRoutes)
+                        {
+                            var width = maxRouteTickets > 0
+                                ? Math.Round((decimal)route.TicketsSold / maxRouteTickets * 100m, 0)
+                                : 0;
+
+                            <div class="bar-row">
+                                <div class="bar-row-top">
+                                    <span>@route.RouteName</span>
+                                    <strong>@route.TicketsSold bilete</strong>
+                                </div>
+
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width:@width%"></div>
+                                </div>
+
+                                <div class="muted">@route.Revenue.ToString("0.00") lei</div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        Nu există încă date pentru rute populare.
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="admin-panel">
+            <div class="admin-panel-header">
+                <h2>Venituri pe zile</h2>
+                <span>Evoluție rezervări</span>
+            </div>
+
+            <div class="admin-panel-body">
+                @if (Model.DailyRevenue.Any())
+                {
+                    <div class="daily-list">
+                        @foreach (var day in Model.DailyRevenue)
+                        {
+                            var width = maxDailyRevenue > 0
+                                ? Math.Round(day.Revenue / maxDailyRevenue * 100m, 0)
+                                : 0;
+
+                            <div class="bar-row">
+                                <div class="bar-row-top">
+                                    <span>@day.Date.ToString("dd.MM.yyyy")</span>
+                                    <strong>@day.Revenue.ToString("0.00") lei</strong>
+                                </div>
+
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width:@width%"></div>
+                                </div>
+
+                                <div class="muted">@day.TicketsSold bilete vândute</div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        Nu există încă venituri înregistrate.
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="admin-panel mb-4">
+        <div class="admin-panel-header">
+            <h2>Profitabilitatea călătoriilor</h2>
+            <span>Include gradul de ocupare și pragul de rentabilitate</span>
+        </div>
+
+        <div class="admin-panel-body">
+            @if (Model.TripProfitabilityRows.Any())
+            {
+                <div class="profit-table-wrap">
+                    <table class="profit-table">
+                        <thead>
+                            <tr>
+                                <th>Rută</th>
+                                <th>Tren</th>
+                                <th>Plecare</th>
+                                <th>Capacitate</th>
+                                <th>Vândute</th>
+                                <th>Ocupare</th>
+                                <th>Prag profit</th>
+                                <th>Venituri</th>
+                                <th>Cost estimat</th>
+                                <th>Profit estimat</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @foreach (var row in Model.TripProfitabilityRows)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="route-name">@row.RouteName</div>
+                                    </td>
+
+                                    <td>
+                                        <div>@row.TrainName</div>
+                                        <div class="muted">@row.TrainCode</div>
+                                    </td>
+
+                                    <td>@row.DepartureTime.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td>@row.Capacity</td>
+                                    <td>@row.TicketsSold</td>
+                                    <td>@row.OccupancyRate.ToString("0.00")%</td>
+                                    <td>@row.BreakEvenOccupancyRate.ToString("0.00")%</td>
+                                    <td>@row.Revenue.ToString("0.00") lei</td>
+                                    <td>@row.EstimatedCost.ToString("0.00") lei</td>
+                                    <td>@row.EstimatedProfit.ToString("0.00") lei</td>
+                                    <td>
+                                        <span class="status-pill @row.StatusCssClass">
+                                            @row.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    Nu există călătorii pentru analiza profitabilității.
+                </div>
+            }
+        </div>
+    </section>
+
+    <section class="admin-panel">
+        <div class="admin-panel-header">
+            <h2>Rezervări recente</h2>
+            <span>Ultimele rezervări făcute în aplicație</span>
+        </div>
+
+        <div class="admin-panel-body">
+            @if (Model.RecentBookings.Any())
+            {
+                <div class="recent-list">
+                    @foreach (var booking in Model.RecentBookings)
+                    {
+                        <div class="recent-booking">
+                            <div class="recent-top">
+                                <div class="recent-code">@booking.BookingCode</div>
+                                <div class="recent-price">@booking.TotalPrice.ToString("0.00") lei</div>
+                            </div>
+
+                            <div class="recent-meta">
+                                @booking.PassengerName · @booking.PassengerEmail
+                            </div>
+
+                            <div class="recent-meta">
+                                @booking.TicketType · @booking.PassengerType · @booking.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    Nu există rezervări recente.
+                </div>
+            }
+        </div>
+    </section>
+</div>

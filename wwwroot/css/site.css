@@ -1,0 +1,553 @@
+:root {
+    --rg-red: #ef233c;
+    --rg-red-dark: #d90429;
+    --rg-green: #22c55e;
+    --rg-blue: #3b82f6;
+
+    --rg-bg: #151922;
+    --rg-bg-soft: #1d2430;
+    --rg-panel: rgba(15, 23, 42, 0.92);
+    --rg-panel-soft: rgba(255, 255, 255, 0.055);
+    --rg-border: rgba(255, 255, 255, 0.14);
+    --rg-border-soft: rgba(255, 255, 255, 0.09);
+
+    --rg-text: #ffffff;
+    --rg-text-soft: rgba(255, 255, 255, 0.72);
+    --rg-text-muted: rgba(255, 255, 255, 0.55);
+
+    --rg-shadow: 0 28px 80px rgba(0, 0, 0, 0.32);
+    --rg-radius-xl: 34px;
+    --rg-radius-lg: 26px;
+    --rg-radius-md: 18px;
+}
+
+html[data-theme="light"] {
+    --rg-bg: #f3f5f9;
+    --rg-bg-soft: #ffffff;
+    --rg-panel: rgba(255, 255, 255, 0.94);
+    --rg-panel-soft: rgba(15, 23, 42, 0.04);
+    --rg-border: rgba(15, 23, 42, 0.12);
+    --rg-border-soft: rgba(15, 23, 42, 0.08);
+
+    --rg-text: #111827;
+    --rg-text-soft: rgba(17, 24, 39, 0.72);
+    --rg-text-muted: rgba(17, 24, 39, 0.56);
+
+    --rg-shadow: 0 28px 80px rgba(15, 23, 42, 0.12);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--rg-text);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(239, 35, 60, 0.14), transparent 32%),
+        radial-gradient(circle at 100% 28%, rgba(34, 197, 94, 0.11), transparent 28%),
+        linear-gradient(135deg, var(--rg-bg), var(--rg-bg-soft));
+    background-attachment: fixed;
+}
+
+html[data-theme="light"] body {
+    background:
+        radial-gradient(circle at 0% 0%, rgba(239, 35, 60, 0.10), transparent 32%),
+        radial-gradient(circle at 100% 28%, rgba(34, 197, 94, 0.10), transparent 28%),
+        linear-gradient(135deg, #eef2f7, #ffffff);
+}
+
+a {
+    color: inherit;
+}
+
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.rg-main {
+    flex: 1;
+}
+
+/* Navbar */
+
+.rg-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    padding: 12px 18px;
+    background: rgba(8, 13, 24, 0.74);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+}
+
+html[data-theme="light"] .rg-navbar {
+    background: rgba(255, 255, 255, 0.82);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.rg-navbar-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.rg-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    color: var(--rg-text);
+    text-decoration: none;
+    font-weight: 950;
+}
+
+.rg-brand:hover {
+    color: var(--rg-text);
+}
+
+.rg-brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    display: inline-grid;
+    place-items: center;
+    background: linear-gradient(180deg, #ff304d, #e0001b);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 950;
+    letter-spacing: -0.4px;
+    box-shadow: 0 12px 28px rgba(239, 35, 60, 0.32);
+}
+
+.rg-brand-text {
+    font-size: 18px;
+    letter-spacing: -0.3px;
+}
+
+.rg-nav-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.rg-nav-links a {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0 15px;
+    color: var(--rg-text-soft);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 900;
+    transition: all 0.18s ease;
+}
+
+.rg-nav-links a:hover {
+    color: var(--rg-text);
+    background: var(--rg-panel-soft);
+    transform: translateY(-1px);
+}
+
+.rg-navbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rg-theme-toggle {
+    min-height: 42px;
+    border: 1px solid var(--rg-border);
+    border-radius: 999px;
+    background: var(--rg-panel-soft);
+    color: var(--rg-text);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    font-weight: 950;
+    transition: all 0.18s ease;
+}
+
+.rg-theme-toggle:hover {
+    transform: translateY(-1px);
+    border-color: rgba(239, 35, 60, 0.45);
+}
+
+.rg-theme-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    background: rgba(239, 35, 60, 0.15);
+    color: var(--rg-red);
+    font-size: 13px;
+}
+
+.rg-menu-btn {
+    display: none;
+    width: 44px;
+    height: 42px;
+    border: 1px solid var(--rg-border);
+    border-radius: 14px;
+    background: var(--rg-panel-soft);
+    padding: 10px;
+}
+
+.rg-menu-btn span {
+    display: block;
+    height: 2px;
+    border-radius: 999px;
+    background: var(--rg-text);
+    margin: 5px 0;
+    transition: all 0.18s ease;
+}
+
+/* Footer */
+
+.rg-footer {
+    margin-top: 40px;
+    padding: 36px 18px 22px;
+    background: rgba(8, 13, 24, 0.62);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+}
+
+html[data-theme="light"] .rg-footer {
+    background: rgba(255, 255, 255, 0.72);
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.rg-footer-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 24px;
+}
+
+.rg-footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    font-weight: 950;
+    margin-bottom: 12px;
+}
+
+.rg-footer p {
+    max-width: 620px;
+    margin: 0;
+    color: var(--rg-text-muted);
+    font-weight: 750;
+}
+
+.rg-footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+    align-content: flex-start;
+}
+
+.rg-footer-links a {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0 15px;
+    color: var(--rg-text-soft);
+    background: var(--rg-panel-soft);
+    border: 1px solid var(--rg-border-soft);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.rg-footer-links a:hover {
+    color: var(--rg-text);
+    border-color: rgba(239, 35, 60, 0.42);
+}
+
+.rg-footer-bottom {
+    max-width: 1180px;
+    margin: 24px auto 0;
+    padding-top: 18px;
+    color: var(--rg-text-muted);
+    border-top: 1px solid var(--rg-border-soft);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+/* Validation */
+
+.text-danger,
+.field-validation-error,
+.validation-summary-errors {
+    color: #fb7185 !important;
+    font-weight: 850;
+    font-size: 13px;
+}
+
+.validation-summary-errors ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+/* Light theme overrides for pages already created */
+
+html[data-theme="light"] .home-hero,
+html[data-theme="light"] .seat-hero,
+html[data-theme="light"] .payment-hero,
+html[data-theme="light"] .confirmation-hero,
+html[data-theme="light"] .history-hero,
+html[data-theme="light"] .admin-hero,
+html[data-theme="light"] .admin-login-hero {
+    color: #fff !important;
+    background:
+        radial-gradient(circle at 86% 14%, rgba(255,255,255,0.16), transparent 30%),
+        radial-gradient(circle at 14% 18%, rgba(239,35,60,0.42), transparent 33%),
+        linear-gradient(135deg, #1f2937 0%, #374151 46%, #111827 100%) !important;
+}
+
+html[data-theme="light"] .search-panel,
+html[data-theme="light"] .seat-panel,
+html[data-theme="light"] .payment-panel,
+html[data-theme="light"] .confirmation-panel,
+html[data-theme="light"] .history-panel,
+html[data-theme="light"] .booking-card,
+html[data-theme="light"] .admin-panel,
+html[data-theme="light"] .login-panel,
+html[data-theme="light"] .stat-card,
+html[data-theme="light"] .feature-card,
+html[data-theme="light"] .journey-card,
+html[data-theme="light"] .seat-map-box,
+html[data-theme="light"] .price-summary,
+html[data-theme="light"] .history-stat {
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,255,255,0.88)) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    color: #111827 !important;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.12) !important;
+}
+
+html[data-theme="light"] .search-panel-header,
+html[data-theme="light"] .seat-panel-header,
+html[data-theme="light"] .payment-panel-header,
+html[data-theme="light"] .confirmation-panel-header,
+html[data-theme="light"] .history-panel-header,
+html[data-theme="light"] .admin-panel-header,
+html[data-theme="light"] .login-panel-header,
+html[data-theme="light"] .booking-card-header {
+    background: rgba(15, 23, 42, 0.055) !important;
+    border-bottom-color: rgba(15, 23, 42, 0.10) !important;
+    color: #111827 !important;
+}
+
+html[data-theme="light"] .search-panel h2,
+html[data-theme="light"] .seat-panel h2,
+html[data-theme="light"] .payment-panel h2,
+html[data-theme="light"] .confirmation-panel h2,
+html[data-theme="light"] .history-panel h2,
+html[data-theme="light"] .admin-panel h2,
+html[data-theme="light"] .login-panel h2,
+html[data-theme="light"] .results-title,
+html[data-theme="light"] .history-results-title,
+html[data-theme="light"] .seat-map-title,
+html[data-theme="light"] .summary-title,
+html[data-theme="light"] .section-subtitle,
+html[data-theme="light"] .journey-title,
+html[data-theme="light"] .route-name,
+html[data-theme="light"] .ticket-section-title,
+html[data-theme="light"] .stat-card strong,
+html[data-theme="light"] .booking-code,
+html[data-theme="light"] .booking-info strong,
+html[data-theme="light"] .detail-row span,
+html[data-theme="light"] .summary-row strong,
+html[data-theme="light"] .info-row strong,
+html[data-theme="light"] .recent-code,
+html[data-theme="light"] .recent-price,
+html[data-theme="light"] .bar-row-top strong,
+html[data-theme="light"] .bar-row-top span,
+html[data-theme="light"] .total-line,
+html[data-theme="light"] .price-line strong {
+    color: #111827 !important;
+}
+
+html[data-theme="light"] .results-subtitle,
+html[data-theme="light"] .feature-card p,
+html[data-theme="light"] .journey-subtitle,
+html[data-theme="light"] .carriage-description,
+html[data-theme="light"] .seat-map-subtitle,
+html[data-theme="light"] .detail-row strong,
+html[data-theme="light"] .summary-row span,
+html[data-theme="light"] .info-row span,
+html[data-theme="light"] .muted,
+html[data-theme="light"] .recent-meta,
+html[data-theme="light"] .stat-card span,
+html[data-theme="light"] .stat-card small,
+html[data-theme="light"] .booking-info span,
+html[data-theme="light"] .payment-panel-header span,
+html[data-theme="light"] .seat-panel-header span,
+html[data-theme="light"] .admin-panel-header span,
+html[data-theme="light"] .confirmation-panel-header span,
+html[data-theme="light"] .history-panel-header span {
+    color: rgba(17, 24, 39, 0.62) !important;
+}
+
+html[data-theme="light"] .field label,
+html[data-theme="light"] .form-field label,
+html[data-theme="light"] .payment-field label,
+html[data-theme="light"] .login-field label,
+html[data-theme="light"] .history-form label {
+    color: rgba(17, 24, 39, 0.78) !important;
+}
+
+html[data-theme="light"] .field input,
+html[data-theme="light"] .field select,
+html[data-theme="light"] .form-field input,
+html[data-theme="light"] .form-field select,
+html[data-theme="light"] .payment-field input,
+html[data-theme="light"] .login-field input,
+html[data-theme="light"] .history-form input {
+    background: rgba(255, 255, 255, 0.82) !important;
+    border-color: rgba(15, 23, 42, 0.15) !important;
+    color: #111827 !important;
+}
+
+html[data-theme="light"] .route-box,
+html[data-theme="light"] .summary-box,
+html[data-theme="light"] .booking-info,
+html[data-theme="light"] .student-box,
+html[data-theme="light"] .recent-booking,
+html[data-theme="light"] .total-box,
+html[data-theme="light"] .status-box,
+html[data-theme="light"] .booking-code-box,
+html[data-theme="light"] .step-item,
+html[data-theme="light"] .history-empty,
+html[data-theme="light"] .empty-results,
+html[data-theme="light"] .empty-state {
+    background: rgba(15, 23, 42, 0.045) !important;
+    border-color: rgba(15, 23, 42, 0.10) !important;
+    color: #111827 !important;
+}
+
+html[data-theme="light"] .tickets-table,
+html[data-theme="light"] .profit-table {
+    color: #111827 !important;
+}
+
+html[data-theme="light"] .tickets-table th,
+html[data-theme="light"] .profit-table th {
+    color: rgba(17, 24, 39, 0.62) !important;
+    background: rgba(15, 23, 42, 0.06) !important;
+}
+
+html[data-theme="light"] .tickets-table td,
+html[data-theme="light"] .profit-table td {
+    border-bottom-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+html[data-theme="light"] .coach-shell {
+    background:
+        linear-gradient(90deg, rgba(15,23,42,0.08), transparent 16%, transparent 84%, rgba(15,23,42,0.08)),
+        linear-gradient(180deg, #dbe3ee 0%, #f8fafc 48%, #d8e0eb 100%) !important;
+    border-color: rgba(15, 23, 42, 0.18) !important;
+}
+
+html[data-theme="light"] .coach-aisle,
+html[data-theme="light"] .coach-front,
+html[data-theme="light"] .coach-back {
+    background: rgba(15, 23, 42, 0.12) !important;
+}
+
+html[data-theme="light"] .coach-direction,
+html[data-theme="light"] .selected-seat-pill,
+html[data-theme="light"] .carriage-tab,
+html[data-theme="light"] .secondary-action,
+html[data-theme="light"] .back-btn {
+    color: #111827 !important;
+    background: rgba(15, 23, 42, 0.06) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+}
+
+html[data-theme="light"] .carriage-tab.active {
+    color: #fff !important;
+    background: linear-gradient(180deg, #ff2342, #e0001b) !important;
+}
+
+html[data-theme="light"] .ticket-card {
+    background: #fff !important;
+    color: #111827 !important;
+}
+
+html[data-theme="light"] .ticket-header {
+    color: #fff !important;
+}
+
+/* Responsive */
+
+@media (max-width: 780px) {
+    .rg-navbar-inner {
+        position: relative;
+    }
+
+    .rg-menu-btn {
+        display: inline-block;
+    }
+
+    .rg-nav-links {
+        position: absolute;
+        top: calc(100% + 12px);
+        left: 0;
+        right: 0;
+        display: none;
+        flex-direction: column;
+        align-items: stretch;
+        padding: 12px;
+        border-radius: 22px;
+        background: rgba(8, 13, 24, 0.94);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: var(--rg-shadow);
+    }
+
+    html[data-theme="light"] .rg-nav-links {
+        background: rgba(255, 255, 255, 0.96);
+        border-color: rgba(15, 23, 42, 0.10);
+    }
+
+    .rg-nav-links.open {
+        display: flex;
+    }
+
+    .rg-nav-links a {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .rg-theme-text {
+        display: none;
+    }
+
+    .rg-footer-inner {
+        grid-template-columns: 1fr;
+    }
+
+    .rg-footer-links {
+        justify-content: flex-start;
+    }
+}

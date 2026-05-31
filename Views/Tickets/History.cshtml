@@ -1,0 +1,585 @@
+@model RailGo.ViewModels.TicketHistoryViewModel
+
+@{
+    ViewData["Title"] = "Istoric bilete";
+
+    var bookings = Model.Bookings ?? new List<RailGo.Models.Booking>();
+
+    var totalBookings = bookings.Count;
+    var totalTickets = bookings.Sum(b => b.Tickets?.Count ?? 0);
+    var totalPaid = bookings.Sum(b => b.TotalPrice);
+}
+
+<style>
+    .history-page {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 34px 18px 70px;
+    }
+
+    .history-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 34px;
+        padding: 46px 42px 120px;
+        margin-bottom: -78px;
+        color: #fff;
+        background:
+            radial-gradient(circle at 82% 18%, rgba(255, 255, 255, 0.10), transparent 30%),
+            radial-gradient(circle at 16% 15%, rgba(239, 35, 60, 0.38), transparent 32%),
+            linear-gradient(135deg, #121826 0%, #24283f 45%, #0b0d14 100%);
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.34);
+    }
+
+    .history-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .history-logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #ef233c;
+        color: #fff;
+        font-weight: 950;
+        letter-spacing: -0.6px;
+        box-shadow: 0 12px 30px rgba(239, 35, 60, 0.32);
+    }
+
+    .history-brand span {
+        font-weight: 950;
+        font-size: 18px;
+    }
+
+    .history-hero h1 {
+        max-width: 720px;
+        font-size: clamp(42px, 6vw, 76px);
+        line-height: 0.95;
+        letter-spacing: -2.2px;
+        font-weight: 950;
+        margin-bottom: 18px;
+    }
+
+    .history-hero p {
+        max-width: 650px;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 18px;
+        font-weight: 750;
+        margin: 0;
+    }
+
+    .history-panel {
+        position: relative;
+        z-index: 4;
+        border-radius: 28px;
+        overflow: hidden;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+            rgba(15, 23, 42, 0.94);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.30);
+        margin-bottom: 24px;
+    }
+
+    .history-panel-header {
+        padding: 18px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+        color: #fff;
+        font-weight: 950;
+    }
+
+    .history-panel-body {
+        padding: 24px;
+    }
+
+    .history-form {
+        display: grid;
+        grid-template-columns: 1fr 210px;
+        gap: 16px;
+        align-items: end;
+    }
+
+    .history-form label {
+        color: rgba(255, 255, 255, 0.82);
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .history-form input {
+        height: 54px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(2, 6, 23, 0.36);
+        color: #fff;
+        padding: 0 16px;
+        font-weight: 800;
+        outline: none;
+    }
+
+    .history-form input::placeholder {
+        color: rgba(255, 255, 255, 0.42);
+    }
+
+    .history-form input:focus {
+        border-color: rgba(239, 35, 60, 0.72);
+        box-shadow: 0 0 0 4px rgba(239, 35, 60, 0.12);
+    }
+
+    .history-search-btn {
+        height: 54px;
+        border: 0;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #ff2342, #e0001b);
+        color: #fff;
+        font-weight: 950;
+        box-shadow: 0 14px 30px rgba(239, 35, 60, 0.32);
+        transition: all 0.18s ease;
+    }
+
+    .history-search-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.04);
+    }
+
+    .history-message {
+        border-radius: 18px;
+        padding: 15px 18px;
+        margin-top: 18px;
+        font-weight: 850;
+        color: #dbeafe;
+        background: rgba(59, 130, 246, 0.14);
+        border: 1px solid rgba(59, 130, 246, 0.22);
+    }
+
+    .history-empty {
+        position: relative;
+        z-index: 3;
+        border-radius: 26px;
+        padding: 34px;
+        background: rgba(15, 23, 42, 0.84);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #fff;
+        text-align: center;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+    }
+
+    .history-empty h2 {
+        font-weight: 950;
+        letter-spacing: -0.6px;
+        margin-bottom: 8px;
+    }
+
+    .history-empty p {
+        color: rgba(255, 255, 255, 0.68);
+        margin: 0;
+        font-weight: 750;
+    }
+
+    .history-stats {
+        position: relative;
+        z-index: 3;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 26px;
+    }
+
+    .history-stat {
+        border-radius: 24px;
+        padding: 22px;
+        color: #fff;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01)),
+            rgba(15, 23, 42, 0.86);
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        box-shadow: 0 20px 55px rgba(0, 0, 0, 0.22);
+    }
+
+    .history-stat span {
+        display: block;
+        color: rgba(255, 255, 255, 0.64);
+        font-weight: 900;
+        font-size: 13px;
+        margin-bottom: 10px;
+    }
+
+    .history-stat strong {
+        display: block;
+        font-size: 32px;
+        line-height: 1;
+        font-weight: 950;
+        letter-spacing: -0.8px;
+    }
+
+    .history-results-title {
+        color: #fff;
+        font-size: 32px;
+        font-weight: 950;
+        letter-spacing: -0.8px;
+        margin: 8px 0 18px;
+    }
+
+    .booking-list {
+        display: grid;
+        gap: 22px;
+    }
+
+    .booking-card {
+        overflow: hidden;
+        border-radius: 28px;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.01)),
+            rgba(15, 23, 42, 0.92);
+        border: 1px solid rgba(255, 255, 255, 0.13);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+    }
+
+    .booking-card-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: center;
+        padding: 18px 22px;
+        background: linear-gradient(90deg, #111827, #1e293b);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        color: #fff;
+    }
+
+    .booking-code {
+        font-weight: 950;
+        letter-spacing: -0.2px;
+    }
+
+    .booking-date {
+        color: rgba(255, 255, 255, 0.64);
+        font-weight: 850;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .booking-body {
+        padding: 22px;
+        color: #fff;
+    }
+
+    .booking-info-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .booking-info {
+        border-radius: 18px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+    }
+
+    .booking-info span {
+        display: block;
+        color: rgba(255, 255, 255, 0.58);
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+
+    .booking-info strong {
+        display: block;
+        font-weight: 950;
+        word-break: break-word;
+    }
+
+    .student-note {
+        border-radius: 16px;
+        padding: 13px 16px;
+        background: rgba(34, 197, 94, 0.13);
+        border: 1px solid rgba(34, 197, 94, 0.24);
+        color: #bbf7d0;
+        font-weight: 850;
+        margin-bottom: 18px;
+    }
+
+    .tickets-table-wrap {
+        overflow-x: auto;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .tickets-table {
+        width: 100%;
+        min-width: 860px;
+        border-collapse: collapse;
+        color: #fff;
+    }
+
+    .tickets-table th {
+        text-align: left;
+        padding: 13px 14px;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.72);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.55px;
+        font-weight: 950;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    .tickets-table td {
+        padding: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        font-weight: 800;
+        vertical-align: middle;
+    }
+
+    .tickets-table tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .ticket-code {
+        font-weight: 950;
+        color: #e5e7eb;
+    }
+
+    .direction-pill {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 6px 10px;
+        background: rgba(59, 130, 246, 0.18);
+        color: #bfdbfe;
+        font-size: 12px;
+        font-weight: 950;
+    }
+
+    .history-action-row {
+        display: flex;
+        justify-content: flex-start;
+        margin-top: 18px;
+    }
+
+    .ticket-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        border-radius: 14px;
+        padding: 0 18px;
+        background: linear-gradient(180deg, #22c55e, #16a34a);
+        color: white;
+        text-decoration: none;
+        font-weight: 950;
+        box-shadow: 0 14px 28px rgba(22, 163, 74, 0.24);
+        transition: all 0.18s ease;
+    }
+
+    .ticket-link:hover {
+        transform: translateY(-2px);
+        color: white;
+        filter: brightness(1.04);
+    }
+
+    @@media (max-width: 900px) {
+        .history-form,
+        .history-stats,
+        .booking-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .booking-card-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .history-hero {
+            padding: 38px 24px 112px;
+        }
+    }
+</style>
+
+<div class="history-page">
+    <section class="history-hero">
+        <div class="history-brand">
+            <div class="history-logo">RG</div>
+            <span>RailGo</span>
+        </div>
+
+        <h1>Istoricul biletelor.</h1>
+
+        <p>
+            Verifică rezervările realizate în aplicație folosind adresa de email introdusă la cumpărare.
+        </p>
+    </section>
+
+    <section class="history-panel">
+        <div class="history-panel-header">
+            Caută rezervări
+        </div>
+
+        <div class="history-panel-body">
+            <form asp-controller="Tickets" asp-action="History" method="post" class="history-form">
+                <div>
+                    <label asp-for="PassengerEmail">Email pasager</label>
+                    <input asp-for="PassengerEmail" placeholder="email@example.com" />
+                    <span asp-validation-for="PassengerEmail" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="history-search-btn">
+                    Caută bilete
+                </button>
+            </form>
+
+            @if (!Model.HasSearched)
+            {
+                <div class="history-message">
+                    Introdu emailul folosit la cumpărare pentru a vedea rezervările.
+                </div>
+            }
+        </div>
+    </section>
+
+    @if (Model.HasSearched && !bookings.Any())
+    {
+        <section class="history-empty">
+            <h2>Nu există rezervări pentru acest email.</h2>
+            <p>Verifică adresa introdusă sau cumpără un bilet nou.</p>
+        </section>
+    }
+
+    @if (Model.HasSearched && bookings.Any())
+    {
+        <section class="history-stats">
+            <div class="history-stat">
+                <span>Rezervări</span>
+                <strong>@totalBookings</strong>
+            </div>
+
+            <div class="history-stat">
+                <span>Bilete generate</span>
+                <strong>@totalTickets</strong>
+            </div>
+
+            <div class="history-stat">
+                <span>Total plată simulată</span>
+                <strong>@totalPaid.ToString("0.00") lei</strong>
+            </div>
+        </section>
+
+        <h2 class="history-results-title">Rezervări găsite</h2>
+
+        <section class="booking-list">
+            @foreach (var booking in bookings)
+            {
+                var tickets = booking.Tickets
+                    .OrderBy(t => t.DirectionType == "Dus" ? 0 : 1)
+                    .ToList();
+
+                <article class="booking-card">
+                    <div class="booking-card-header">
+                        <div class="booking-code">
+                            Rezervare: @booking.BookingCode
+                        </div>
+
+                        <div class="booking-date">
+                            @booking.CreatedAt.ToString("dd.MM.yyyy HH:mm")
+                        </div>
+                    </div>
+
+                    <div class="booking-body">
+                        <div class="booking-info-grid">
+                            <div class="booking-info">
+                                <span>Pasager</span>
+                                <strong>@booking.PassengerName</strong>
+                            </div>
+
+                            <div class="booking-info">
+                                <span>Email</span>
+                                <strong>@booking.PassengerEmail</strong>
+                            </div>
+
+                            <div class="booking-info">
+                                <span>Tip bilet</span>
+                                <strong>@booking.TicketType</strong>
+                            </div>
+
+                            <div class="booking-info">
+                                <span>Total</span>
+                                <strong>@booking.TotalPrice.ToString("0.00") lei</strong>
+                            </div>
+                        </div>
+
+                        @if (booking.PassengerType == "Student")
+                        {
+                            <div class="student-note">
+                                Reducere student 50% aplicată. Universitate: @booking.University. Legitimație: @booking.StudentCardNumber.
+                            </div>
+                        }
+
+                        <div class="tickets-table-wrap">
+                            <table class="tickets-table">
+                                <thead>
+                                    <tr>
+                                        <th>Cod bilet</th>
+                                        <th>Direcție</th>
+                                        <th>Rută</th>
+                                        <th>Tren</th>
+                                        <th>Plecare</th>
+                                        <th>Vagon</th>
+                                        <th>Clasă</th>
+                                        <th>Loc</th>
+                                        <th>Preț</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    @foreach (var ticket in tickets)
+                                    {
+                                        var trip = ticket.Trip;
+                                        var route = trip?.RailRoute;
+                                        var train = trip?.Train;
+
+                                        <tr>
+                                            <td class="ticket-code">@ticket.TicketCode</td>
+                                            <td>
+                                                <span class="direction-pill">@ticket.DirectionType</span>
+                                            </td>
+                                            <td>
+                                                @route?.DepartureStation?.Name → @route?.ArrivalStation?.Name
+                                            </td>
+                                            <td>
+                                                @train?.Name
+                                                <br />
+                                                <span style="color:rgba(255,255,255,.55); font-size:12px;">@train?.TrainCode</span>
+                                            </td>
+                                            <td>@trip?.DepartureTime.ToString("dd.MM.yyyy HH:mm")</td>
+                                            <td>@ticket.CarriageNumber</td>
+                                            <td>@ticket.SeatClass</td>
+                                            <td>@ticket.SeatNumber</td>
+                                            <td>@ticket.Price.ToString("0.00") lei</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="history-action-row">
+                            <a asp-controller="Booking"
+                               asp-action="Confirmation"
+                               asp-route-bookingId="@booking.Id"
+                               class="ticket-link">
+                                Vezi biletul complet
+                            </a>
+                        </div>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+</div>

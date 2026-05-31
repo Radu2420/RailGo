@@ -1,0 +1,1152 @@
+@model RailGo.ViewModels.SeatSelectionViewModel
+
+@{
+    ViewData["Title"] = "Alege locul";
+
+    var isRoundTrip = Model.TicketType == "Dus-întors" || Model.TicketType == "Dus-Intors" || Model.TicketType == "Dus-intors";
+
+    var outboundRoute = $"{Model.Trip?.RailRoute?.DepartureStation?.Name} → {Model.Trip?.RailRoute?.ArrivalStation?.Name}";
+    var returnRoute = Model.ReturnTrip != null
+        ? $"{Model.ReturnTrip.RailRoute?.DepartureStation?.Name} → {Model.ReturnTrip.RailRoute?.ArrivalStation?.Name}"
+        : "";
+
+    var outboundStartSeat = ((Model.SelectedCarriage - 1) * Model.SeatsPerCarriage) + 1;
+    var outboundEndSeat = Model.SelectedCarriage * Model.SeatsPerCarriage;
+    var outboundSeats = Enumerable.Range(outboundStartSeat, Model.SeatsPerCarriage).ToList();
+
+    var returnCarriage = Model.ReturnSelectedCarriage ?? Model.SelectedCarriage;
+    var returnSeatsPerCarriage = Model.ReturnSeatsPerCarriage > 0 ? Model.ReturnSeatsPerCarriage : Model.SeatsPerCarriage;
+    var returnStartSeat = ((returnCarriage - 1) * returnSeatsPerCarriage) + 1;
+    var returnSeats = Enumerable.Range(returnStartSeat, returnSeatsPerCarriage).ToList();
+
+    string GetClassName(int carriage)
+    {
+        return carriage == 1 ? "Clasa I" : "Clasa a II-a";
+    }
+
+    string SeatButtonClass(bool occupied, bool selected)
+    {
+        if (occupied)
+        {
+            return "seat-btn occupied";
+        }
+
+        if (selected)
+        {
+            return "seat-btn selected";
+        }
+
+        return "seat-btn free";
+    }
+}
+
+<style>
+    .seat-page {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 34px 18px 80px;
+    }
+
+    .seat-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 34px;
+        padding: 46px 42px 118px;
+        margin-bottom: -78px;
+        color: white;
+        background:
+            radial-gradient(circle at 86% 14%, rgba(255,255,255,0.10), transparent 30%),
+            radial-gradient(circle at 14% 18%, rgba(239,35,60,0.45), transparent 33%),
+            linear-gradient(135deg, #121826 0%, #24283f 46%, #090b10 100%);
+        box-shadow: 0 30px 85px rgba(0,0,0,0.35);
+    }
+
+    .seat-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .seat-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #ef233c;
+        color: white;
+        font-weight: 950;
+        letter-spacing: -0.6px;
+        box-shadow: 0 14px 30px rgba(239,35,60,0.34);
+    }
+
+    .seat-brand span {
+        font-weight: 950;
+        font-size: 19px;
+    }
+
+    .seat-hero h1 {
+        max-width: 760px;
+        font-size: clamp(42px, 5.4vw, 72px);
+        line-height: 0.96;
+        letter-spacing: -2.2px;
+        font-weight: 950;
+        margin-bottom: 18px;
+    }
+
+    .seat-hero p {
+        max-width: 680px;
+        color: rgba(255,255,255,0.82);
+        font-size: 18px;
+        font-weight: 750;
+        margin: 0;
+    }
+
+    .seat-layout {
+        position: relative;
+        z-index: 4;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .seat-panel {
+        border-radius: 30px;
+        overflow: hidden;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+            rgba(15,23,42,0.95);
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: 0 28px 80px rgba(0,0,0,0.32);
+        color: white;
+    }
+
+    .seat-panel-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        padding: 20px 26px;
+        background: rgba(255,255,255,0.06);
+        border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .seat-panel-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 950;
+        letter-spacing: -0.5px;
+    }
+
+    .seat-panel-header span {
+        color: rgba(255,255,255,0.62);
+        font-size: 13px;
+        font-weight: 900;
+        text-align: right;
+    }
+
+    .seat-panel-body {
+        padding: 26px;
+    }
+
+    .validation-box {
+        border-radius: 20px;
+        padding: 18px 20px;
+        margin-bottom: 22px;
+        background: rgba(239,68,68,0.13);
+        border: 1px solid rgba(239,68,68,0.30);
+        color: #fecaca;
+        font-weight: 850;
+    }
+
+    .validation-box ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .journey-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .journey-card {
+        border-radius: 22px;
+        padding: 18px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .journey-kicker {
+        color: rgba(255,255,255,0.54);
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .55px;
+        margin-bottom: 8px;
+    }
+
+    .journey-title {
+        font-size: 20px;
+        font-weight: 950;
+        letter-spacing: -0.35px;
+        margin-bottom: 8px;
+    }
+
+    .journey-meta {
+        color: rgba(255,255,255,0.64);
+        font-weight: 850;
+        line-height: 1.7;
+    }
+
+    .carriage-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .carriage-tab {
+        min-height: 44px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 16px;
+        text-decoration: none;
+        color: rgba(255,255,255,0.82);
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.12);
+        font-weight: 950;
+        transition: all .18s ease;
+    }
+
+    .carriage-tab:hover {
+        color: white;
+        transform: translateY(-1px);
+        border-color: rgba(239,35,60,0.38);
+    }
+
+    .carriage-tab.active {
+        color: white;
+        background: linear-gradient(180deg, #ff304d, #e0001b);
+        border-color: rgba(239,35,60,0.42);
+        box-shadow: 0 12px 26px rgba(239,35,60,0.26);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .form-grid .full {
+        grid-column: 1 / -1;
+    }
+
+    .form-field label {
+        display: block;
+        color: rgba(255,255,255,0.78);
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .form-field input,
+    .form-field select {
+        width: 100%;
+        height: 54px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.16);
+        background: rgba(2,6,23,0.34);
+        color: white;
+        padding: 0 15px;
+        font-weight: 850;
+        outline: none;
+    }
+
+    .form-field input::placeholder {
+        color: rgba(255,255,255,0.42);
+    }
+
+    .form-field select option {
+        color: #111827;
+    }
+
+    .form-field input:focus,
+    .form-field select:focus {
+        border-color: rgba(239,35,60,0.72);
+        box-shadow: 0 0 0 4px rgba(239,35,60,0.12);
+    }
+
+    .student-box {
+        display: none;
+        grid-column: 1 / -1;
+        border-radius: 22px;
+        padding: 18px;
+        background: rgba(34,197,94,0.10);
+        border: 1px solid rgba(34,197,94,0.18);
+    }
+
+    .student-box.visible {
+        display: block;
+    }
+
+    .student-box-title {
+        font-size: 18px;
+        font-weight: 950;
+        margin-bottom: 14px;
+    }
+
+    .maps-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .seat-map-box {
+        border-radius: 28px;
+        padding: 24px;
+        background:
+            radial-gradient(circle at 14% 16%, rgba(239,35,60,0.14), transparent 30%),
+            linear-gradient(135deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012));
+        border: 1px solid rgba(255,255,255,0.13);
+    }
+
+    .seat-map-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: flex-start;
+        margin-bottom: 20px;
+    }
+
+    .seat-map-title {
+        font-size: 26px;
+        line-height: 1.1;
+        font-weight: 950;
+        letter-spacing: -0.75px;
+        margin-bottom: 8px;
+    }
+
+    .seat-map-subtitle {
+        color: rgba(255,255,255,0.64);
+        font-weight: 850;
+    }
+
+    .legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: rgba(255,255,255,0.78);
+        font-weight: 900;
+        font-size: 13px;
+    }
+
+    .legend-dot {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+    }
+
+    .legend-dot.free {
+        background: #22c55e;
+    }
+
+    .legend-dot.occupied {
+        background: #ef233c;
+    }
+
+    .legend-dot.selected {
+        background: #3b82f6;
+    }
+
+    .coach-wrapper {
+        display: flex;
+        justify-content: center;
+        margin: 24px 0;
+    }
+
+    .coach-shell {
+        position: relative;
+        width: 360px;
+        min-height: 720px;
+        padding: 58px 36px;
+        border-radius: 82px 82px 44px 44px;
+        background:
+            linear-gradient(90deg, rgba(255,255,255,0.10), transparent 16%, transparent 84%, rgba(255,255,255,0.10)),
+            linear-gradient(180deg, #4b5563 0%, #1f2937 48%, #111827 100%);
+        border: 2px solid rgba(255,255,255,0.20);
+        box-shadow:
+            inset 0 0 0 1px rgba(255,255,255,0.05),
+            0 24px 60px rgba(0,0,0,0.28);
+    }
+
+    .coach-front,
+    .coach-back {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 120px;
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(239,35,60,0.65);
+        box-shadow: 0 0 22px rgba(239,35,60,0.38);
+    }
+
+    .coach-front {
+        top: 26px;
+    }
+
+    .coach-back {
+        bottom: 26px;
+    }
+
+    .coach-side-line {
+        position: absolute;
+        top: 80px;
+        bottom: 80px;
+        width: 9px;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.12);
+    }
+
+    .coach-side-line.left {
+        left: 18px;
+    }
+
+    .coach-side-line.right {
+        right: 18px;
+    }
+
+    .seat-grid {
+        position: relative;
+        z-index: 3;
+        display: grid;
+        grid-template-columns: 64px 42px 64px 64px;
+        gap: 12px 10px;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .aisle-cell {
+        height: 42px;
+        display: grid;
+        place-items: center;
+    }
+
+    .aisle-line {
+        width: 8px;
+        height: 100%;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.15);
+    }
+
+    .seat-btn {
+        width: 64px;
+        height: 48px;
+        border: 0;
+        border-radius: 16px;
+        color: white;
+        font-weight: 950;
+        letter-spacing: -0.2px;
+        transition: all .16s ease;
+        position: relative;
+    }
+
+    .seat-btn.free {
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.18), transparent),
+            #22c55e;
+        box-shadow: 0 12px 24px rgba(34,197,94,0.22);
+    }
+
+    .seat-btn.free:hover {
+        transform: translateY(-2px) scale(1.03);
+        filter: brightness(1.08);
+    }
+
+    .seat-btn.selected {
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.18), transparent),
+            #3b82f6;
+        box-shadow: 0 12px 24px rgba(59,130,246,0.28);
+        outline: 3px solid rgba(147,197,253,0.30);
+    }
+
+    .seat-btn.occupied {
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.12), transparent),
+            #ef233c;
+        cursor: not-allowed;
+        opacity: .82;
+    }
+
+    .selected-seat-pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 42px;
+        border-radius: 999px;
+        padding: 0 15px;
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: rgba(255,255,255,0.86);
+        font-weight: 950;
+    }
+
+    .price-summary {
+        border-radius: 28px;
+        padding: 22px;
+        background:
+            radial-gradient(circle at 12% 16%, rgba(239,35,60,0.20), transparent 34%),
+            rgba(255,255,255,0.055);
+        border: 1px solid rgba(239,35,60,0.24);
+    }
+
+    .price-line {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 10px 0;
+        border-bottom: 1px dashed rgba(255,255,255,0.12);
+    }
+
+    .price-line:last-child {
+        border-bottom: 0;
+    }
+
+    .price-line span {
+        color: rgba(255,255,255,0.62);
+        font-weight: 850;
+    }
+
+    .price-line strong {
+        color: white;
+        font-weight: 950;
+        text-align: right;
+    }
+
+    .price-total {
+        margin-top: 12px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(255,255,255,0.12);
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-end;
+    }
+
+    .price-total span {
+        color: rgba(255,255,255,0.70);
+        font-weight: 950;
+    }
+
+    .price-total strong {
+        color: white;
+        font-size: 30px;
+        font-weight: 950;
+    }
+
+    .actions-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 14px;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .continue-btn {
+        min-height: 64px;
+        border: 0;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ff2342, #e0001b);
+        color: white;
+        font-size: 20px;
+        font-weight: 950;
+        box-shadow: 0 18px 38px rgba(239,35,60,0.30);
+        transition: all .18s ease;
+    }
+
+    .continue-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.04);
+    }
+
+    .back-link {
+        min-height: 54px;
+        border-radius: 16px;
+        padding: 0 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        color: white;
+        font-weight: 950;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .back-link:hover {
+        color: white;
+        background: rgba(255,255,255,0.10);
+    }
+
+    @@media (max-width: 900px) {
+        .journey-grid,
+        .form-grid,
+        .actions-row {
+            grid-template-columns: 1fr;
+        }
+
+        .seat-hero {
+            padding: 38px 24px 108px;
+        }
+
+        .seat-panel-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .seat-panel-header span {
+            text-align: left;
+        }
+    }
+
+    @@media (max-width: 520px) {
+        .coach-shell {
+            width: 310px;
+            padding-left: 24px;
+            padding-right: 24px;
+        }
+
+        .seat-grid {
+            grid-template-columns: 56px 34px 56px 56px;
+            gap: 10px 8px;
+        }
+
+        .seat-btn {
+            width: 56px;
+            height: 44px;
+            border-radius: 14px;
+        }
+    }
+</style>
+
+<div class="seat-page">
+    <section class="seat-hero">
+        <div class="seat-brand">
+            <div class="seat-logo">RG</div>
+            <span>RailGo</span>
+        </div>
+
+        <h1>Alege locul în tren.</h1>
+
+        <p>
+            Selectează locul pentru fiecare direcție și completează datele pasagerului înainte de confirmarea rezervării.
+        </p>
+    </section>
+
+    <form asp-controller="Booking" asp-action="Payment" method="post" id="seatSelectionForm">
+        <input type="hidden" asp-for="TripId" />
+        <input type="hidden" asp-for="ReturnTripId" />
+        <input type="hidden" asp-for="TicketType" />
+
+        <input type="hidden" asp-for="SelectedCarriage" />
+        <input type="hidden" asp-for="ReturnSelectedCarriage" />
+
+        <input type="hidden" asp-for="SelectedSeat" id="SelectedSeat" />
+        <input type="hidden" asp-for="ReturnSelectedSeat" id="ReturnSelectedSeat" />
+
+        <div class="seat-layout">
+            <section class="seat-panel">
+                <div class="seat-panel-header">
+                    <h2>Detalii călătorie</h2>
+                    <span>@Model.TicketType</span>
+                </div>
+
+                <div class="seat-panel-body">
+                    <div asp-validation-summary="All" class="validation-box"></div>
+
+                    <div class="journey-grid">
+                        <div class="journey-card">
+                            <div class="journey-kicker">Dus</div>
+                            <div class="journey-title">@outboundRoute</div>
+                            <div class="journey-meta">
+                                @Model.Trip?.Train?.Name (@Model.Trip?.Train?.TrainCode)<br />
+                                Plecare: @Model.Trip?.DepartureTime.ToString("dd.MM.yyyy HH:mm")<br />
+                                Sosire: @Model.Trip?.ArrivalTime.ToString("dd.MM.yyyy HH:mm")
+                            </div>
+                        </div>
+
+                        @if (isRoundTrip && Model.ReturnTrip != null)
+                        {
+                            <div class="journey-card">
+                                <div class="journey-kicker">Întors</div>
+                                <div class="journey-title">@returnRoute</div>
+                                <div class="journey-meta">
+                                    @Model.ReturnTrip.Train?.Name (@Model.ReturnTrip.Train?.TrainCode)<br />
+                                    Plecare: @Model.ReturnTrip.DepartureTime.ToString("dd.MM.yyyy HH:mm")<br />
+                                    Sosire: @Model.ReturnTrip.ArrivalTime.ToString("dd.MM.yyyy HH:mm")
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+
+            <section class="seat-panel">
+                <div class="seat-panel-header">
+                    <h2>Alege vagonul pentru dus</h2>
+                    <span>Numerotarea locurilor continuă de la un vagon la altul</span>
+                </div>
+
+                <div class="seat-panel-body">
+                    <div class="carriage-tabs">
+                        @for (var carriage = 1; carriage <= Model.CarriageCount; carriage++)
+                        {
+                            <a class="carriage-tab @(Model.SelectedCarriage == carriage ? "active" : "")"
+                               asp-controller="Booking"
+                               asp-action="SelectSeat"
+                               asp-route-tripId="@Model.TripId"
+                               asp-route-returnTripId="@Model.ReturnTripId"
+                               asp-route-ticketType="@Model.TicketType"
+                               asp-route-carriageNumber="@carriage"
+                               asp-route-returnCarriageNumber="@returnCarriage">
+                                Vagon @carriage · @GetClassName(carriage)
+                            </a>
+                        }
+                    </div>
+                </div>
+            </section>
+
+            @if (isRoundTrip && Model.ReturnTrip != null)
+            {
+                <section class="seat-panel">
+                    <div class="seat-panel-header">
+                        <h2>Alege vagonul pentru întoarcere</h2>
+                        <span>Poți selecta alt loc și alt vagon la întoarcere</span>
+                    </div>
+
+                    <div class="seat-panel-body">
+                        <div class="carriage-tabs">
+                            @for (var carriage = 1; carriage <= Model.ReturnCarriageCount; carriage++)
+                            {
+                                <a class="carriage-tab @(returnCarriage == carriage ? "active" : "")"
+                                   asp-controller="Booking"
+                                   asp-action="SelectSeat"
+                                   asp-route-tripId="@Model.TripId"
+                                   asp-route-returnTripId="@Model.ReturnTripId"
+                                   asp-route-ticketType="@Model.TicketType"
+                                   asp-route-carriageNumber="@Model.SelectedCarriage"
+                                   asp-route-returnCarriageNumber="@carriage">
+                                    Vagon @carriage · @GetClassName(carriage)
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </section>
+            }
+
+            <section class="seat-panel">
+                <div class="seat-panel-header">
+                    <h2>Date pasager</h2>
+                    <span>Obligatorii pentru emiterea biletului</span>
+                </div>
+
+                <div class="seat-panel-body">
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label asp-for="PassengerName">Nume pasager</label>
+                            <input asp-for="PassengerName" placeholder="Ex: Radu Vladimir" required />
+                            <span asp-validation-for="PassengerName" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-field">
+                            <label asp-for="PassengerEmail">Email</label>
+                            <input asp-for="PassengerEmail" type="email" placeholder="email@example.com" required />
+                            <span asp-validation-for="PassengerEmail" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-field full">
+                            <label asp-for="PassengerType">Tip pasager</label>
+                            <select asp-for="PassengerType" id="passengerTypeSelect" required>
+                                <option value="Adult">Adult</option>
+                                <option value="Student">Student</option>
+                            </select>
+                            <span asp-validation-for="PassengerType" class="text-danger"></span>
+                        </div>
+
+                        <div class="student-box" id="studentBox">
+                            <div class="student-box-title">Date student</div>
+
+                            <div class="form-grid">
+                                <div class="form-field">
+                                    <label asp-for="University">Universitate</label>
+                                    <input asp-for="University" placeholder="Ex: Universitatea din București" />
+                                    <span asp-validation-for="University" class="text-danger"></span>
+                                </div>
+
+                                <div class="form-field">
+                                    <label asp-for="StudentCardNumber">Număr legitimație</label>
+                                    <input asp-for="StudentCardNumber" placeholder="Ex: STU123456" />
+                                    <span asp-validation-for="StudentCardNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="seat-panel">
+                <div class="seat-panel-header">
+                    <h2>Hartă locuri</h2>
+                    <span>Clasa I și Clasa a II-a folosesc același design de hartă</span>
+                </div>
+
+                <div class="seat-panel-body">
+                    <div class="maps-grid">
+                        <div class="seat-map-box">
+                            <div class="seat-map-top">
+                                <div>
+                                    <div class="seat-map-title">Dus · Vagon @Model.SelectedCarriage · @Model.SeatClass</div>
+                                    <div class="seat-map-subtitle">
+                                        @outboundRoute · locuri @outboundStartSeat - @outboundEndSeat
+                                    </div>
+
+                                    <div class="legend">
+                                        <div class="legend-item"><span class="legend-dot free"></span> Liber</div>
+                                        <div class="legend-item"><span class="legend-dot occupied"></span> Ocupat</div>
+                                        <div class="legend-item"><span class="legend-dot selected"></span> Selectat</div>
+                                    </div>
+                                </div>
+
+                                <div class="selected-seat-pill">
+                                    Loc dus: <span id="outboundSelectedText" style="margin-left:6px;">@(Model.SelectedSeat > 0 ? Model.SelectedSeat.ToString() : "-")</span>
+                                </div>
+                            </div>
+
+                            <div class="coach-wrapper">
+                                <div class="coach-shell">
+                                    <div class="coach-front"></div>
+                                    <div class="coach-back"></div>
+                                    <div class="coach-side-line left"></div>
+                                    <div class="coach-side-line right"></div>
+
+                                    <div class="seat-grid">
+                                        @for (var i = 0; i < outboundSeats.Count; i += 3)
+                                        {
+                                            var seat1 = outboundSeats[i];
+                                            var seat2 = i + 1 < outboundSeats.Count ? outboundSeats[i + 1] : 0;
+                                            var seat3 = i + 2 < outboundSeats.Count ? outboundSeats[i + 2] : 0;
+
+                                            var occupied1 = Model.OccupiedSeats.Contains(seat1);
+                                            var selected1 = Model.SelectedSeat == seat1;
+
+                                            <button type="button"
+                                                    class="@SeatButtonClass(occupied1, selected1)"
+                                                    @(occupied1 ? "disabled" : "")
+                                                    onclick="selectSeat('outbound', this, @seat1)">
+                                                @seat1
+                                            </button>
+
+                                            <div class="aisle-cell"><div class="aisle-line"></div></div>
+
+                                            @if (seat2 > 0)
+                                            {
+                                                var occupied2 = Model.OccupiedSeats.Contains(seat2);
+                                                var selected2 = Model.SelectedSeat == seat2;
+
+                                                <button type="button"
+                                                        class="@SeatButtonClass(occupied2, selected2)"
+                                                        @(occupied2 ? "disabled" : "")
+                                                        onclick="selectSeat('outbound', this, @seat2)">
+                                                    @seat2
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <div></div>
+                                            }
+
+                                            @if (seat3 > 0)
+                                            {
+                                                var occupied3 = Model.OccupiedSeats.Contains(seat3);
+                                                var selected3 = Model.SelectedSeat == seat3;
+
+                                                <button type="button"
+                                                        class="@SeatButtonClass(occupied3, selected3)"
+                                                        @(occupied3 ? "disabled" : "")
+                                                        onclick="selectSeat('outbound', this, @seat3)">
+                                                    @seat3
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <div></div>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (isRoundTrip && Model.ReturnTrip != null)
+                        {
+                            var returnEndSeat = returnCarriage * returnSeatsPerCarriage;
+
+                            <div class="seat-map-box">
+                                <div class="seat-map-top">
+                                    <div>
+                                        <div class="seat-map-title">Întors · Vagon @returnCarriage · @Model.ReturnSeatClass</div>
+                                        <div class="seat-map-subtitle">
+                                            @returnRoute · locuri @returnStartSeat - @returnEndSeat
+                                        </div>
+
+                                        <div class="legend">
+                                            <div class="legend-item"><span class="legend-dot free"></span> Liber</div>
+                                            <div class="legend-item"><span class="legend-dot occupied"></span> Ocupat</div>
+                                            <div class="legend-item"><span class="legend-dot selected"></span> Selectat</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="selected-seat-pill">
+                                        Loc întors: <span id="returnSelectedText" style="margin-left:6px;">@(Model.ReturnSelectedSeat.HasValue && Model.ReturnSelectedSeat.Value > 0 ? Model.ReturnSelectedSeat.Value.ToString() : "-")</span>
+                                    </div>
+                                </div>
+
+                                <div class="coach-wrapper">
+                                    <div class="coach-shell">
+                                        <div class="coach-front"></div>
+                                        <div class="coach-back"></div>
+                                        <div class="coach-side-line left"></div>
+                                        <div class="coach-side-line right"></div>
+
+                                        <div class="seat-grid">
+                                            @for (var i = 0; i < returnSeats.Count; i += 3)
+                                            {
+                                                var seat1 = returnSeats[i];
+                                                var seat2 = i + 1 < returnSeats.Count ? returnSeats[i + 1] : 0;
+                                                var seat3 = i + 2 < returnSeats.Count ? returnSeats[i + 2] : 0;
+
+                                                var occupied1 = Model.ReturnOccupiedSeats.Contains(seat1);
+                                                var selected1 = Model.ReturnSelectedSeat == seat1;
+
+                                                <button type="button"
+                                                        class="@SeatButtonClass(occupied1, selected1)"
+                                                        @(occupied1 ? "disabled" : "")
+                                                        onclick="selectSeat('return', this, @seat1)">
+                                                    @seat1
+                                                </button>
+
+                                                <div class="aisle-cell"><div class="aisle-line"></div></div>
+
+                                                @if (seat2 > 0)
+                                                {
+                                                    var occupied2 = Model.ReturnOccupiedSeats.Contains(seat2);
+                                                    var selected2 = Model.ReturnSelectedSeat == seat2;
+
+                                                    <button type="button"
+                                                            class="@SeatButtonClass(occupied2, selected2)"
+                                                            @(occupied2 ? "disabled" : "")
+                                                            onclick="selectSeat('return', this, @seat2)">
+                                                        @seat2
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <div></div>
+                                                }
+
+                                                @if (seat3 > 0)
+                                                {
+                                                    var occupied3 = Model.ReturnOccupiedSeats.Contains(seat3);
+                                                    var selected3 = Model.ReturnSelectedSeat == seat3;
+
+                                                    <button type="button"
+                                                            class="@SeatButtonClass(occupied3, selected3)"
+                                                            @(occupied3 ? "disabled" : "")
+                                                            onclick="selectSeat('return', this, @seat3)">
+                                                        @seat3
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <div></div>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+
+            <section class="seat-panel">
+                <div class="seat-panel-header">
+                    <h2>Rezumat rezervare</h2>
+                    <span>Verificare înainte de plată</span>
+                </div>
+
+                <div class="seat-panel-body">
+                    <div class="price-summary">
+                        <div class="price-line">
+                            <span>Bilet dus</span>
+                            <strong>@Model.OutboundFinalPrice.ToString("0.00") lei</strong>
+                        </div>
+
+                        @if (isRoundTrip && Model.ReturnTrip != null)
+                        {
+                            <div class="price-line">
+                                <span>Bilet întors</span>
+                                <strong>@Model.ReturnFinalPrice.ToString("0.00") lei</strong>
+                            </div>
+                        }
+
+                        <div class="price-line">
+                            <span>Tip bilet</span>
+                            <strong>@Model.TicketType</strong>
+                        </div>
+
+                        <div class="price-line">
+                            <span>Clasa dus</span>
+                            <strong>@Model.SeatClass</strong>
+                        </div>
+
+                        @if (isRoundTrip && Model.ReturnTrip != null)
+                        {
+                            <div class="price-line">
+                                <span>Clasa întors</span>
+                                <strong>@Model.ReturnSeatClass</strong>
+                            </div>
+                        }
+
+                        <div class="price-total">
+                            <span>Total</span>
+                            <strong>@Model.TotalPrice.ToString("0.00") lei</strong>
+                        </div>
+                    </div>
+
+                    <div class="actions-row">
+                        <button type="submit" class="continue-btn">
+                            Continuă spre plata simulată
+                        </button>
+
+                        <a asp-controller="Trips" asp-action="Search" class="back-link">
+                            Înapoi la căutare
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </form>
+</div>
+
+<script>
+    function selectSeat(direction, button, seatNumber) {
+        if (direction === "outbound") {
+            document.querySelectorAll(".seat-map-box:first-of-type .seat-btn.selected").forEach(function (btn) {
+                btn.classList.remove("selected");
+                btn.classList.add("free");
+            });
+
+            button.classList.remove("free");
+            button.classList.add("selected");
+
+            document.getElementById("SelectedSeat").value = seatNumber;
+            document.getElementById("outboundSelectedText").innerText = seatNumber;
+        }
+
+        if (direction === "return") {
+            const maps = document.querySelectorAll(".seat-map-box");
+            const returnMap = maps.length > 1 ? maps[1] : null;
+
+            if (returnMap) {
+                returnMap.querySelectorAll(".seat-btn.selected").forEach(function (btn) {
+                    btn.classList.remove("selected");
+                    btn.classList.add("free");
+                });
+            }
+
+            button.classList.remove("free");
+            button.classList.add("selected");
+
+            document.getElementById("ReturnSelectedSeat").value = seatNumber;
+
+            const text = document.getElementById("returnSelectedText");
+            if (text) {
+                text.innerText = seatNumber;
+            }
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("seatSelectionForm");
+        const passengerTypeSelect = document.getElementById("passengerTypeSelect");
+        const studentBox = document.getElementById("studentBox");
+
+        function toggleStudentBox() {
+            if (passengerTypeSelect.value === "Student") {
+                studentBox.classList.add("visible");
+            } else {
+                studentBox.classList.remove("visible");
+            }
+        }
+
+        passengerTypeSelect.addEventListener("change", toggleStudentBox);
+        toggleStudentBox();
+
+        form.addEventListener("submit", function (event) {
+            const passengerName = document.getElementById("PassengerName").value.trim();
+            const passengerEmail = document.getElementById("PassengerEmail").value.trim();
+            const selectedSeat = document.getElementById("SelectedSeat").value;
+            const returnSeatInput = document.getElementById("ReturnSelectedSeat");
+            const isRoundTrip = "@isRoundTrip".toLowerCase() === "true";
+
+            let errors = [];
+
+            if (!passengerName) {
+                errors.push("Completează numele pasagerului.");
+            }
+
+            if (!passengerEmail) {
+                errors.push("Completează adresa de email.");
+            }
+
+            if (!selectedSeat || parseInt(selectedSeat) <= 0) {
+                errors.push("Alege locul pentru călătoria dus.");
+            }
+
+            if (isRoundTrip) {
+                if (!returnSeatInput.value || parseInt(returnSeatInput.value) <= 0) {
+                    errors.push("Alege locul pentru călătoria de întoarcere.");
+                }
+            }
+
+            if (passengerTypeSelect.value === "Student") {
+                const university = document.getElementById("University").value.trim();
+                const studentCard = document.getElementById("StudentCardNumber").value.trim();
+
+                if (!university) {
+                    errors.push("Completează universitatea pentru student.");
+                }
+
+                if (!studentCard) {
+                    errors.push("Completează numărul legitimației de student.");
+                }
+            }
+
+            if (errors.length > 0) {
+                event.preventDefault();
+                alert(errors.join("\n"));
+            }
+        });
+    });
+</script>

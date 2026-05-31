@@ -1,0 +1,835 @@
+@model RailGo.ViewModels.BookingConfirmationViewModel
+
+@{
+    ViewData["Title"] = "Bilet generat";
+
+    var booking = Model.Booking;
+    var tickets = booking.Tickets
+        .OrderBy(t => t.DirectionType == "Dus" ? 0 : 1)
+        .ThenBy(t => t.IssuedAt)
+        .ToList();
+}
+
+@functions {
+    string Safe(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "-" : value;
+    }
+
+    string FormatDate(DateTime date)
+    {
+        return date.ToString("dd.MM.yyyy HH:mm");
+    }
+}
+
+<style>
+    .ticket-page {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 34px 18px 80px;
+    }
+
+    .ticket-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 34px;
+        padding: 46px 42px 126px;
+        margin-bottom: -86px;
+        color: white;
+        background:
+            radial-gradient(circle at 86% 14%, rgba(255,255,255,0.12), transparent 30%),
+            radial-gradient(circle at 14% 18%, rgba(34,197,94,0.34), transparent 33%),
+            radial-gradient(circle at 18% 0%, rgba(239,35,60,0.38), transparent 36%),
+            linear-gradient(135deg, #121826 0%, #24283f 48%, #090b10 100%);
+        box-shadow: 0 30px 85px rgba(0,0,0,0.35);
+    }
+
+    .ticket-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .ticket-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #ef233c;
+        color: white;
+        font-weight: 950;
+        letter-spacing: -0.6px;
+        box-shadow: 0 14px 30px rgba(239,35,60,0.34);
+    }
+
+    .ticket-brand span {
+        font-weight: 950;
+        font-size: 19px;
+    }
+
+    .ticket-hero h1 {
+        max-width: 800px;
+        font-size: clamp(44px, 6vw, 78px);
+        line-height: 0.95;
+        letter-spacing: -2.4px;
+        font-weight: 950;
+        margin-bottom: 18px;
+    }
+
+    .ticket-hero p {
+        max-width: 680px;
+        color: rgba(255,255,255,0.82);
+        font-size: 18px;
+        font-weight: 750;
+        margin: 0;
+    }
+
+    .ticket-layout {
+        position: relative;
+        z-index: 4;
+        display: grid;
+        grid-template-columns: 360px 1fr;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .ticket-summary-panel {
+        border-radius: 30px;
+        overflow: hidden;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+            rgba(15,23,42,0.95);
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: 0 28px 80px rgba(0,0,0,0.32);
+        color: white;
+    }
+
+    .ticket-summary-header {
+        padding: 20px 24px;
+        background: rgba(255,255,255,0.06);
+        border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .ticket-summary-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 950;
+        letter-spacing: -0.5px;
+    }
+
+    .ticket-summary-body {
+        padding: 24px;
+    }
+
+    .status-box {
+        border-radius: 24px;
+        padding: 20px;
+        margin-bottom: 18px;
+        background:
+            radial-gradient(circle at 12% 16%, rgba(34,197,94,0.24), transparent 34%),
+            rgba(255,255,255,0.055);
+        border: 1px solid rgba(34,197,94,0.24);
+    }
+
+    .status-box strong {
+        display: block;
+        font-size: 24px;
+        font-weight: 950;
+        margin-bottom: 6px;
+    }
+
+    .status-box span {
+        color: rgba(255,255,255,0.68);
+        font-weight: 800;
+    }
+
+    .summary-code {
+        border-radius: 20px;
+        padding: 16px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.10);
+        margin-bottom: 16px;
+    }
+
+    .summary-code span,
+    .summary-row span {
+        display: block;
+        color: rgba(255,255,255,0.56);
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .55px;
+        margin-bottom: 6px;
+    }
+
+    .summary-code strong {
+        display: block;
+        color: white;
+        font-weight: 950;
+        word-break: break-word;
+    }
+
+    .summary-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4px;
+        padding: 12px 0;
+        border-bottom: 1px dashed rgba(255,255,255,0.12);
+    }
+
+    .summary-row:last-child {
+        border-bottom: 0;
+    }
+
+    .summary-row strong {
+        color: white;
+        font-weight: 950;
+        word-break: break-word;
+    }
+
+    .ticket-actions {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+    }
+
+    .ticket-action-primary,
+    .ticket-action-secondary {
+        min-height: 54px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        border: 0;
+        font-weight: 950;
+        transition: all .18s ease;
+    }
+
+    .ticket-action-primary {
+        background: linear-gradient(180deg, #ff2342, #e0001b);
+        color: white;
+        box-shadow: 0 18px 38px rgba(239,35,60,0.30);
+    }
+
+    .ticket-action-primary:hover {
+        color: white;
+        transform: translateY(-2px);
+        filter: brightness(1.04);
+    }
+
+    .ticket-action-secondary {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.14);
+        color: white;
+    }
+
+    .ticket-action-secondary:hover {
+        color: white;
+        background: rgba(255,255,255,0.10);
+    }
+
+    .email-message {
+        border-radius: 18px;
+        padding: 14px 16px;
+        margin-bottom: 16px;
+        background: rgba(59,130,246,0.12);
+        border: 1px solid rgba(59,130,246,0.22);
+        color: #dbeafe;
+        font-weight: 800;
+    }
+
+    .ticket-list {
+        display: grid;
+        gap: 24px;
+    }
+
+    .rail-ticket {
+        overflow: hidden;
+        border-radius: 30px;
+        background: #ffffff;
+        color: #111827;
+        border: 1px solid rgba(17,24,39,0.10);
+        box-shadow: 0 28px 80px rgba(0,0,0,0.24);
+    }
+
+    .rail-ticket-top {
+        padding: 26px 28px;
+        background:
+            radial-gradient(circle at 92% 12%, rgba(255,255,255,0.16), transparent 30%),
+            radial-gradient(circle at 12% 15%, rgba(239,35,60,0.38), transparent 34%),
+            linear-gradient(135deg, #111827, #1f2937);
+        color: white;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+    }
+
+    .rail-ticket-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .rail-ticket-title-mark {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #ef233c;
+        color: white;
+        font-weight: 950;
+        box-shadow: 0 12px 28px rgba(239,35,60,0.32);
+    }
+
+    .rail-ticket-title h2 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 950;
+        letter-spacing: -0.8px;
+    }
+
+    .ticket-direction {
+        border-radius: 999px;
+        padding: 8px 14px;
+        background: rgba(255,255,255,0.10);
+        border: 1px solid rgba(255,255,255,0.16);
+        color: white;
+        font-size: 13px;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    .rail-ticket-route {
+        padding: 26px 28px 0;
+    }
+
+    .route-line {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 18px;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+
+    .route-station {
+        border-radius: 22px;
+        padding: 18px;
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+    }
+
+    .route-station span {
+        display: block;
+        color: #6b7280;
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .55px;
+        margin-bottom: 6px;
+    }
+
+    .route-station strong {
+        display: block;
+        font-size: 21px;
+        line-height: 1.1;
+        font-weight: 950;
+        color: #111827;
+    }
+
+    .route-arrow {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #ef233c;
+        color: white;
+        font-weight: 950;
+        box-shadow: 0 14px 30px rgba(239,35,60,0.24);
+    }
+
+    .rail-ticket-body {
+        display: grid;
+        grid-template-columns: 1fr 230px;
+        gap: 24px;
+        padding: 8px 28px 28px;
+    }
+
+    .ticket-section-title {
+        font-size: 18px;
+        font-weight: 950;
+        letter-spacing: -0.25px;
+        margin: 20px 0 14px;
+        color: #111827;
+    }
+
+    .ticket-data-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .ticket-data {
+        border-radius: 18px;
+        padding: 15px 16px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+    }
+
+    .ticket-data span {
+        display: block;
+        color: #6b7280;
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .55px;
+        margin-bottom: 6px;
+    }
+
+    .ticket-data strong {
+        display: block;
+        color: #111827;
+        font-size: 15px;
+        font-weight: 950;
+        word-break: break-word;
+    }
+
+    .qr-card {
+        align-self: start;
+        border-radius: 24px;
+        padding: 18px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 18px 50px rgba(15,23,42,0.08);
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .qr-card h3 {
+        margin: 0 0 12px;
+        font-size: 20px;
+        font-weight: 950;
+        color: #111827;
+    }
+
+    .qr-card img {
+        width: 176px;
+        height: 176px;
+        object-fit: contain;
+        display: block;
+        margin: 0 auto 12px;
+    }
+
+    .qr-card p {
+        margin: 0;
+        color: #6b7280;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .ticket-footer-note {
+        padding: 16px 28px;
+        background: #f9fafb;
+        border-top: 1px solid #e5e7eb;
+        color: #6b7280;
+        font-size: 13px;
+        font-weight: 800;
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    @@media (max-width: 1000px) {
+        .ticket-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .rail-ticket-body {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 700px) {
+        .ticket-hero {
+            padding: 38px 24px 114px;
+        }
+
+        .route-line {
+            grid-template-columns: 1fr;
+        }
+
+        .route-arrow {
+            transform: rotate(90deg);
+            margin: 0 auto;
+        }
+
+        .ticket-data-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .rail-ticket-top {
+            flex-direction: column;
+        }
+    }
+
+    @@media print {
+        @@page {
+            size: A4;
+            margin: 10mm;
+        }
+
+        html,
+        body {
+            background: white !important;
+            color: #111827 !important;
+        }
+
+        .rg-navbar,
+        .rg-footer,
+        .ticket-hero,
+        .ticket-summary-panel,
+        .ticket-actions,
+        header,
+        footer,
+        nav {
+            display: none !important;
+        }
+
+        .ticket-page {
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .ticket-layout {
+            display: block !important;
+        }
+
+        .ticket-list {
+            display: block !important;
+        }
+
+        .rail-ticket {
+            box-shadow: none !important;
+            border: 1.5px solid #111827 !important;
+            border-radius: 18px !important;
+            overflow: hidden !important;
+            page-break-after: always;
+            break-after: page;
+            margin: 0 !important;
+        }
+
+        .rail-ticket:last-child {
+            page-break-after: auto;
+            break-after: auto;
+        }
+
+        .rail-ticket-top {
+            background: #111827 !important;
+            color: white !important;
+            padding: 18px 20px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .rail-ticket-title-mark,
+        .route-arrow {
+            background: #ef233c !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .rail-ticket-title h2 {
+            font-size: 24px !important;
+        }
+
+        .ticket-direction {
+            background: #ef233c !important;
+            border: 0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .rail-ticket-route {
+            padding: 18px 20px 0 !important;
+        }
+
+        .route-line {
+            grid-template-columns: 1fr auto 1fr !important;
+            gap: 10px !important;
+            margin-bottom: 8px !important;
+        }
+
+        .route-station {
+            padding: 12px !important;
+            border-radius: 14px !important;
+        }
+
+        .route-station strong {
+            font-size: 17px !important;
+        }
+
+        .route-arrow {
+            width: 34px !important;
+            height: 34px !important;
+        }
+
+        .rail-ticket-body {
+            grid-template-columns: 1fr 190px !important;
+            gap: 14px !important;
+            padding: 0 20px 18px !important;
+        }
+
+        .ticket-section-title {
+            margin: 12px 0 8px !important;
+            font-size: 15px !important;
+        }
+
+        .ticket-data-grid {
+            gap: 8px !important;
+        }
+
+        .ticket-data {
+            padding: 10px 11px !important;
+            border-radius: 12px !important;
+        }
+
+        .ticket-data strong {
+            font-size: 13px !important;
+        }
+
+        .qr-card {
+            margin-top: 12px !important;
+            padding: 12px !important;
+            border-radius: 14px !important;
+            box-shadow: none !important;
+        }
+
+        .qr-card img {
+            width: 142px !important;
+            height: 142px !important;
+        }
+
+        .ticket-footer-note {
+            padding: 10px 20px !important;
+            font-size: 11px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+
+<div class="ticket-page">
+    <section class="ticket-hero">
+        <div class="ticket-brand">
+            <div class="ticket-logo">RG</div>
+            <span>RailGo</span>
+        </div>
+
+        <h1>Bilet generat cu succes.</h1>
+
+        <p>
+            Rezervarea este finalizată. Biletul digital poate fi printat sau prezentat cu ajutorul codului QR.
+        </p>
+    </section>
+
+    <div class="ticket-layout">
+        <aside class="ticket-summary-panel">
+            <div class="ticket-summary-header">
+                <h2>Rezervare</h2>
+            </div>
+
+            <div class="ticket-summary-body">
+                <div class="status-box">
+                    <strong>Confirmat</strong>
+                    <span>Biletul a fost emis în aplicație.</span>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.EmailMessage))
+                {
+                    <div class="email-message">
+                        @Model.EmailMessage
+                    </div>
+                }
+
+                <div class="summary-code">
+                    <span>Cod rezervare</span>
+                    <strong>@booking.BookingCode</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Pasager</span>
+                    <strong>@booking.PassengerName</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Email</span>
+                    <strong>@booking.PassengerEmail</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Tip bilet</span>
+                    <strong>@booking.TicketType</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Bilete generate</span>
+                    <strong>@tickets.Count</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Total plată simulată</span>
+                    <strong>@booking.TotalPrice.ToString("0.00") lei</strong>
+                </div>
+
+                <div class="ticket-actions">
+                    <button type="button" class="ticket-action-primary" onclick="window.print()">
+                        Printează biletul
+                    </button>
+
+                    <a asp-controller="Tickets" asp-action="History" class="ticket-action-secondary">
+                        Istoric bilete
+                    </a>
+
+                    <a asp-controller="Trips" asp-action="Search" class="ticket-action-secondary">
+                        Caută alt tren
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+        <section class="ticket-list">
+            @foreach (var ticket in tickets)
+            {
+                var trip = ticket.Trip;
+                var route = trip?.RailRoute;
+                var departureStation = Safe(route?.DepartureStation?.Name);
+                var arrivalStation = Safe(route?.ArrivalStation?.Name);
+                var trainName = $"{Safe(trip?.Train?.Name)} ({Safe(trip?.Train?.TrainCode)})";
+                var qrBase64 = Model.TicketQrCodes.ContainsKey(ticket.Id) ? Model.TicketQrCodes[ticket.Id] : "";
+
+                <article class="rail-ticket">
+                    <div class="rail-ticket-top">
+                        <div class="rail-ticket-title">
+                            <div class="rail-ticket-title-mark">RG</div>
+                            <h2>RailGo Ticket</h2>
+                        </div>
+
+                        <div class="ticket-direction">@ticket.DirectionType</div>
+                    </div>
+
+                    <div class="rail-ticket-route">
+                        <div class="route-line">
+                            <div class="route-station">
+                                <span>Plecare</span>
+                                <strong>@departureStation</strong>
+                            </div>
+
+                            <div class="route-arrow">→</div>
+
+                            <div class="route-station">
+                                <span>Sosire</span>
+                                <strong>@arrivalStation</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="rail-ticket-body">
+                        <div>
+                            <div class="ticket-section-title">Date pasager</div>
+
+                            <div class="ticket-data-grid">
+                                <div class="ticket-data">
+                                    <span>Nume</span>
+                                    <strong>@booking.PassengerName</strong>
+                                </div>
+
+                                <div class="ticket-data">
+                                    <span>Email</span>
+                                    <strong>@booking.PassengerEmail</strong>
+                                </div>
+
+                                <div class="ticket-data">
+                                    <span>Tip pasager</span>
+                                    <strong>@booking.PassengerType</strong>
+                                </div>
+
+                                <div class="ticket-data">
+                                    <span>Preț</span>
+                                    <strong>@ticket.Price.ToString("0.00") lei</strong>
+                                </div>
+                            </div>
+
+                            <div class="ticket-section-title">Date bilet</div>
+
+                            <div class="ticket-data-grid">
+                                <div class="ticket-data">
+                                    <span>Cod bilet</span>
+                                    <strong>@ticket.TicketCode</strong>
+                                </div>
+
+                                <div class="ticket-data">
+                                    <span>Rută</span>
+                                    <strong>@departureStation → @arrivalStation</strong>
+                                </div>
+
+                                <div class="ticket-data">
+                                    <span>Tren</span>
+                                    <strong>@trainName</strong>
+                                </div>
+
+                                <div class="ticket-data">
+                                    <span>Plecare</span>
+                                    <strong>@(trip != null ? FormatDate(trip.DepartureTime) : "-")</strong>
+                                </div>
+
+                                <div class="ticket-data">
+                                    <span>Sosire</span>
+                                    <strong>@(trip != null ? FormatDate(trip.ArrivalTime) : "-")</strong>
+                                </div>
+
+                                <div class="ticket-data">
+                                    <span>Loc</span>
+                                    <strong>Vagon @ticket.CarriageNumber, loc @ticket.SeatNumber</strong>
+                                </div>
+
+                                <div class="ticket-data">
+                                    <span>Clasă</span>
+                                    <strong>@ticket.SeatClass</strong>
+                                </div>
+
+                                <div class="ticket-data">
+                                    <span>Emis</span>
+                                    <strong>@FormatDate(ticket.IssuedAt)</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="qr-card">
+                            <h3>Cod QR</h3>
+
+                            @if (!string.IsNullOrWhiteSpace(qrBase64))
+                            {
+                                <img src="data:image/png;base64,@qrBase64" alt="Cod QR bilet" />
+                            }
+
+                            <p>Cod unic pentru validarea biletului.</p>
+                        </div>
+                    </div>
+
+                    <div class="ticket-footer-note">
+                        <span>Cod rezervare: @booking.BookingCode</span>
+                        <span>Plată simulată · RailGo</span>
+                    </div>
+                </article>
+            }
+        </section>
+    </div>
+</div>

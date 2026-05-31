@@ -1,0 +1,881 @@
+@model RailGo.ViewModels.SeatSelectionViewModel
+
+@{
+    ViewData["Title"] = "Plată simulată";
+
+    var outboundRoute = $"{Model.Trip?.RailRoute?.DepartureStation?.Name} → {Model.Trip?.RailRoute?.ArrivalStation?.Name}";
+
+    var returnRoute = Model.ReturnTrip != null
+        ? $"{Model.ReturnTrip.RailRoute?.DepartureStation?.Name} → {Model.ReturnTrip.RailRoute?.ArrivalStation?.Name}"
+        : "";
+
+    var passengerName = string.IsNullOrWhiteSpace(Model.PassengerName) ? "-" : Model.PassengerName;
+    var passengerEmail = string.IsNullOrWhiteSpace(Model.PassengerEmail) ? "-" : Model.PassengerEmail;
+    var passengerType = string.IsNullOrWhiteSpace(Model.PassengerType) ? "Adult" : Model.PassengerType;
+
+    var returnSelectedSeatText = Model.ReturnSelectedSeat.HasValue && Model.ReturnSelectedSeat.Value > 0
+        ? Model.ReturnSelectedSeat.Value.ToString()
+        : "-";
+}
+
+<style>
+    .payment-page {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 34px 18px 80px;
+    }
+
+    .payment-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 34px;
+        padding: 46px 42px 128px;
+        margin-bottom: -88px;
+        color: white;
+        background:
+            radial-gradient(circle at 86% 14%, rgba(255,255,255,0.10), transparent 30%),
+            radial-gradient(circle at 14% 18%, rgba(239,35,60,0.45), transparent 33%),
+            linear-gradient(135deg, #121826 0%, #24283f 46%, #090b10 100%);
+        box-shadow: 0 30px 85px rgba(0,0,0,0.35);
+    }
+
+    .payment-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .payment-logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        background: #ef233c;
+        color: white;
+        font-weight: 950;
+        letter-spacing: -0.6px;
+        box-shadow: 0 14px 30px rgba(239,35,60,0.34);
+    }
+
+    .payment-brand span {
+        font-weight: 950;
+        font-size: 19px;
+    }
+
+    .payment-hero h1 {
+        max-width: 760px;
+        font-size: clamp(44px, 6vw, 78px);
+        line-height: 0.95;
+        letter-spacing: -2.4px;
+        font-weight: 950;
+        margin-bottom: 18px;
+    }
+
+    .payment-hero p {
+        max-width: 660px;
+        color: rgba(255,255,255,0.82);
+        font-size: 18px;
+        font-weight: 750;
+        margin: 0;
+    }
+
+    .payment-layout {
+        position: relative;
+        z-index: 4;
+        display: grid;
+        grid-template-columns: 1.08fr .92fr;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .payment-panel {
+        border-radius: 30px;
+        overflow: hidden;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+            rgba(15,23,42,0.95);
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: 0 28px 80px rgba(0,0,0,0.32);
+        color: white;
+    }
+
+    .payment-panel-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        padding: 20px 26px;
+        background: rgba(255,255,255,0.06);
+        border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .payment-panel-header h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 950;
+        letter-spacing: -0.5px;
+    }
+
+    .payment-panel-header span {
+        color: rgba(255,255,255,0.62);
+        font-size: 13px;
+        font-weight: 900;
+        text-align: right;
+    }
+
+    .payment-panel-body {
+        padding: 26px;
+    }
+
+    .payment-card-preview {
+        position: relative;
+        overflow: hidden;
+        min-height: 250px;
+        border-radius: 28px;
+        padding: 26px;
+        margin-bottom: 24px;
+        background:
+            radial-gradient(circle at 88% 18%, rgba(255,255,255,0.16), transparent 30%),
+            radial-gradient(circle at 12% 18%, rgba(239,35,60,0.48), transparent 34%),
+            linear-gradient(135deg, #111827, #283044);
+        border: 1px solid rgba(255,255,255,0.16);
+        box-shadow: 0 24px 60px rgba(0,0,0,0.28);
+    }
+
+    .card-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 44px;
+    }
+
+    .card-brand {
+        font-weight: 950;
+        font-size: 20px;
+    }
+
+    .card-status {
+        border-radius: 999px;
+        padding: 7px 12px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.14);
+        color: rgba(255,255,255,0.82);
+        font-size: 12px;
+        font-weight: 950;
+    }
+
+    .card-number {
+        font-size: 25px;
+        font-weight: 950;
+        letter-spacing: 2px;
+        margin-bottom: 24px;
+        word-spacing: 4px;
+    }
+
+    .card-bottom {
+        display: grid;
+        grid-template-columns: 1.2fr .55fr .7fr;
+        gap: 18px;
+        align-items: end;
+    }
+
+    .card-bottom span {
+        display: block;
+        color: rgba(255,255,255,0.50);
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+
+    .card-bottom strong {
+        font-weight: 950;
+        word-break: break-word;
+    }
+
+    .readonly-section-title,
+    .payment-section-title {
+        font-size: 18px;
+        font-weight: 950;
+        margin: 0 0 14px;
+        letter-spacing: -0.3px;
+    }
+
+    .readonly-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+
+    .readonly-item {
+        border-radius: 18px;
+        padding: 16px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .readonly-item.full {
+        grid-column: 1 / -1;
+    }
+
+    .readonly-item span {
+        display: block;
+        color: rgba(255,255,255,0.55);
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        margin-bottom: 7px;
+    }
+
+    .readonly-item strong {
+        display: block;
+        color: white;
+        font-weight: 950;
+        word-break: break-word;
+    }
+
+    .payment-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .payment-grid .full {
+        grid-column: 1 / -1;
+    }
+
+    .payment-field label {
+        display: block;
+        color: rgba(255,255,255,0.78);
+        font-weight: 900;
+        margin-bottom: 8px;
+    }
+
+    .payment-field input {
+        width: 100%;
+        height: 54px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.16);
+        background: rgba(2,6,23,0.34);
+        color: white;
+        padding: 0 15px;
+        font-weight: 850;
+        outline: none;
+    }
+
+    .payment-field input::placeholder {
+        color: rgba(255,255,255,0.38);
+    }
+
+    .payment-field input:focus {
+        border-color: rgba(239,35,60,0.72);
+        box-shadow: 0 0 0 4px rgba(239,35,60,0.12);
+    }
+
+    .payment-error {
+        display: none;
+        border-radius: 18px;
+        padding: 14px 16px;
+        margin-bottom: 18px;
+        background: rgba(239,68,68,0.13);
+        border: 1px solid rgba(239,68,68,0.30);
+        color: #fecaca;
+        font-weight: 850;
+    }
+
+    .payment-error ul {
+        margin: 0;
+        padding-left: 18px;
+    }
+
+    .payment-note {
+        margin-top: 18px;
+        padding: 15px;
+        border-radius: 18px;
+        background: rgba(59,130,246,0.12);
+        border: 1px solid rgba(59,130,246,0.22);
+        color: #dbeafe;
+        font-weight: 800;
+    }
+
+    .summary-section {
+        margin-bottom: 22px;
+    }
+
+    .summary-title {
+        font-size: 17px;
+        font-weight: 950;
+        margin-bottom: 12px;
+    }
+
+    .summary-box {
+        border-radius: 22px;
+        padding: 18px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.10);
+        margin-bottom: 14px;
+    }
+
+    .summary-route {
+        font-size: 18px;
+        font-weight: 950;
+        letter-spacing: -0.35px;
+        margin-bottom: 8px;
+    }
+
+    .summary-train {
+        color: rgba(255,255,255,0.62);
+        font-weight: 850;
+        margin-bottom: 14px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 9px 0;
+        border-bottom: 1px dashed rgba(255,255,255,0.12);
+    }
+
+    .summary-row:last-child {
+        border-bottom: 0;
+    }
+
+    .summary-row span {
+        color: rgba(255,255,255,0.60);
+        font-weight: 850;
+    }
+
+    .summary-row strong {
+        color: white;
+        font-weight: 950;
+        text-align: right;
+        word-break: break-word;
+    }
+
+    .total-box {
+        border-radius: 24px;
+        padding: 20px;
+        background:
+            radial-gradient(circle at 12% 16%, rgba(239,35,60,0.22), transparent 34%),
+            rgba(255,255,255,0.055);
+        border: 1px solid rgba(239,35,60,0.26);
+    }
+
+    .total-line {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-end;
+        margin-bottom: 16px;
+    }
+
+    .total-line span {
+        color: rgba(255,255,255,0.64);
+        font-weight: 900;
+    }
+
+    .total-line strong {
+        color: white;
+        font-size: 30px;
+        line-height: 1;
+        font-weight: 950;
+        text-align: right;
+    }
+
+    .confirm-btn {
+        width: 100%;
+        min-height: 64px;
+        border: 0;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ff2342, #e0001b);
+        color: white;
+        font-size: 20px;
+        font-weight: 950;
+        box-shadow: 0 18px 38px rgba(239,35,60,0.30);
+        transition: all .18s ease;
+    }
+
+    .confirm-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.04);
+    }
+
+    .back-btn {
+        width: 100%;
+        min-height: 50px;
+        margin-top: 12px;
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 16px;
+        background: rgba(255,255,255,0.06);
+        color: white;
+        font-weight: 950;
+    }
+
+    @@media (max-width: 980px) {
+        .payment-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .payment-hero {
+            padding: 38px 24px 118px;
+        }
+    }
+
+    @@media (max-width: 620px) {
+        .readonly-grid,
+        .payment-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .readonly-item.full,
+        .payment-grid .full {
+            grid-column: auto;
+        }
+
+        .payment-panel-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .payment-panel-header span {
+            text-align: left;
+        }
+
+        .card-bottom {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="payment-page">
+    <section class="payment-hero">
+        <div class="payment-brand">
+            <div class="payment-logo">RG</div>
+            <span>RailGo</span>
+        </div>
+
+        <h1>Finalizează rezervarea.</h1>
+
+        <p>
+            Verifică detaliile rezervării și introdu datele cardului pentru confirmarea plății simulate.
+        </p>
+    </section>
+
+    <form asp-controller="Booking" asp-action="ConfirmBooking" method="post" id="paymentForm">
+        <input type="hidden" asp-for="TripId" />
+        <input type="hidden" asp-for="ReturnTripId" />
+        <input type="hidden" asp-for="TicketType" />
+
+        <input type="hidden" asp-for="SelectedCarriage" />
+        <input type="hidden" asp-for="ReturnSelectedCarriage" />
+
+        <input type="hidden" asp-for="SelectedSeat" />
+        <input type="hidden" asp-for="ReturnSelectedSeat" />
+
+        <input type="hidden" asp-for="PassengerName" />
+        <input type="hidden" asp-for="PassengerEmail" />
+        <input type="hidden" asp-for="PassengerType" />
+        <input type="hidden" asp-for="University" />
+        <input type="hidden" asp-for="StudentCardNumber" />
+
+        <div class="payment-layout">
+            <section class="payment-panel">
+                <div class="payment-panel-header">
+                    <h2>Plată simulată</h2>
+                    <span>Date card</span>
+                </div>
+
+                <div class="payment-panel-body">
+                    <div class="payment-card-preview">
+                        <div class="card-top">
+                            <div class="card-brand">RailGo Pay</div>
+                            <div class="card-status">Simulat</div>
+                        </div>
+
+                        <div class="card-number" id="cardPreviewNumber">
+                            4242 4242 4242 4242
+                        </div>
+
+                        <div class="card-bottom">
+                            <div>
+                                <span>Deținător card</span>
+                                <strong id="cardPreviewHolder">@passengerName</strong>
+                            </div>
+
+                            <div>
+                                <span>Expiră</span>
+                                <strong id="cardPreviewExpiry">MM/YY</strong>
+                            </div>
+
+                            <div>
+                                <span>Total</span>
+                                <strong>@Model.TotalPrice.ToString("0.00") lei</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="payment-error" id="paymentErrorBox">
+                        <ul id="paymentErrorList"></ul>
+                    </div>
+
+                    <h3 class="payment-section-title">Date card</h3>
+
+                    <div class="payment-grid">
+                        <div class="payment-field full">
+                            <label for="CardHolder">Nume de pe card</label>
+                            <input id="CardHolder"
+                                   name="CardHolder"
+                                   value="@(passengerName == "-" ? "" : passengerName)"
+                                   placeholder="Ex: RADU VLADIMIR"
+                                   autocomplete="cc-name"
+                                   required />
+                        </div>
+
+                        <div class="payment-field full">
+                            <label for="CardNumber">Număr card</label>
+                            <input id="CardNumber"
+                                   name="CardNumber"
+                                   value=""
+                                   placeholder="4242 4242 4242 4242"
+                                   inputmode="numeric"
+                                   autocomplete="cc-number"
+                                   maxlength="19"
+                                   required />
+                        </div>
+
+                        <div class="payment-field">
+                            <label for="CardExpiry">Data expirării</label>
+                            <input id="CardExpiry"
+                                   name="CardExpiry"
+                                   value=""
+                                   placeholder="MM/YY"
+                                   inputmode="numeric"
+                                   autocomplete="cc-exp"
+                                   maxlength="5"
+                                   required />
+                        </div>
+
+                        <div class="payment-field">
+                            <label for="CardCvv">CVV</label>
+                            <input id="CardCvv"
+                                   name="CardCvv"
+                                   value=""
+                                   placeholder="123"
+                                   inputmode="numeric"
+                                   autocomplete="cc-csc"
+                                   maxlength="4"
+                                   required />
+                        </div>
+                    </div>
+
+                    <h3 class="readonly-section-title">Date pasager</h3>
+
+                    <div class="readonly-grid">
+                        <div class="readonly-item">
+                            <span>Nume</span>
+                            <strong>@passengerName</strong>
+                        </div>
+
+                        <div class="readonly-item">
+                            <span>Email</span>
+                            <strong>@passengerEmail</strong>
+                        </div>
+
+                        <div class="readonly-item">
+                            <span>Tip pasager</span>
+                            <strong>@passengerType</strong>
+                        </div>
+
+                        @if (Model.PassengerType == "Student")
+                        {
+                            <div class="readonly-item">
+                                <span>Reducere</span>
+                                <strong>50%</strong>
+                            </div>
+
+                            <div class="readonly-item">
+                                <span>Universitate</span>
+                                <strong>@Model.University</strong>
+                            </div>
+
+                            <div class="readonly-item">
+                                <span>Legitimație</span>
+                                <strong>@Model.StudentCardNumber</strong>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="payment-note">
+                        Plata este simulată. Datele cardului sunt folosite doar pentru prezentarea fluxului de cumpărare și nu sunt salvate.
+                    </div>
+                </div>
+            </section>
+
+            <aside class="payment-panel">
+                <div class="payment-panel-header">
+                    <h2>Rezumat</h2>
+                    <span>@Model.TicketType</span>
+                </div>
+
+                <div class="payment-panel-body">
+                    <div class="summary-section">
+                        <div class="summary-title">Călătorie dus</div>
+
+                        <div class="summary-box">
+                            <div class="summary-route">@outboundRoute</div>
+
+                            <div class="summary-train">
+                                @Model.Trip?.Train?.Name (@Model.Trip?.Train?.TrainCode)
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Plecare</span>
+                                <strong>@Model.Trip?.DepartureTime.ToString("dd.MM.yyyy HH:mm")</strong>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Vagon</span>
+                                <strong>@Model.SelectedCarriage</strong>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Clasă</span>
+                                <strong>@Model.SeatClass</strong>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Loc</span>
+                                <strong>@Model.SelectedSeat</strong>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Preț</span>
+                                <strong>@Model.OutboundFinalPrice.ToString("0.00") lei</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.IsRoundTrip && Model.ReturnTrip != null)
+                    {
+                        <div class="summary-section">
+                            <div class="summary-title">Călătorie întoarcere</div>
+
+                            <div class="summary-box">
+                                <div class="summary-route">@returnRoute</div>
+
+                                <div class="summary-train">
+                                    @Model.ReturnTrip.Train?.Name (@Model.ReturnTrip.Train?.TrainCode)
+                                </div>
+
+                                <div class="summary-row">
+                                    <span>Plecare</span>
+                                    <strong>@Model.ReturnTrip.DepartureTime.ToString("dd.MM.yyyy HH:mm")</strong>
+                                </div>
+
+                                <div class="summary-row">
+                                    <span>Vagon</span>
+                                    <strong>@Model.ReturnSelectedCarriage</strong>
+                                </div>
+
+                                <div class="summary-row">
+                                    <span>Clasă</span>
+                                    <strong>@Model.ReturnSeatClass</strong>
+                                </div>
+
+                                <div class="summary-row">
+                                    <span>Loc</span>
+                                    <strong>@returnSelectedSeatText</strong>
+                                </div>
+
+                                <div class="summary-row">
+                                    <span>Preț</span>
+                                    <strong>@Model.ReturnFinalPrice.ToString("0.00") lei</strong>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="summary-section">
+                        <div class="summary-title">Pasager</div>
+
+                        <div class="summary-box">
+                            <div class="summary-row">
+                                <span>Nume</span>
+                                <strong>@passengerName</strong>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Email</span>
+                                <strong>@passengerEmail</strong>
+                            </div>
+
+                            <div class="summary-row">
+                                <span>Tip</span>
+                                <strong>@passengerType</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="total-box">
+                        <div class="total-line">
+                            <span>Total</span>
+                            <strong>@Model.TotalPrice.ToString("0.00") lei</strong>
+                        </div>
+
+                        <button type="submit" class="confirm-btn">
+                            Confirmă plata simulată
+                        </button>
+
+                        <button type="button" class="back-btn" onclick="history.back()">
+                            Înapoi
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("paymentForm");
+
+        const cardHolderInput = document.getElementById("CardHolder");
+        const cardNumberInput = document.getElementById("CardNumber");
+        const cardExpiryInput = document.getElementById("CardExpiry");
+        const cardCvvInput = document.getElementById("CardCvv");
+
+        const cardPreviewNumber = document.getElementById("cardPreviewNumber");
+        const cardPreviewHolder = document.getElementById("cardPreviewHolder");
+        const cardPreviewExpiry = document.getElementById("cardPreviewExpiry");
+
+        const errorBox = document.getElementById("paymentErrorBox");
+        const errorList = document.getElementById("paymentErrorList");
+
+        function onlyDigits(value) {
+            return value.replace(/\D/g, "");
+        }
+
+        function formatCardNumber(value) {
+            const digits = onlyDigits(value).substring(0, 16);
+            return digits.replace(/(.{4})/g, "$1 ").trim();
+        }
+
+        function formatExpiry(value) {
+            const digits = onlyDigits(value).substring(0, 4);
+
+            if (digits.length <= 2) {
+                return digits;
+            }
+
+            return digits.substring(0, 2) + "/" + digits.substring(2);
+        }
+
+        function updateCardPreview() {
+            const numberValue = cardNumberInput.value.trim();
+            const holderValue = cardHolderInput.value.trim();
+            const expiryValue = cardExpiryInput.value.trim();
+
+            cardPreviewNumber.innerText = numberValue || "•••• •••• •••• ••••";
+            cardPreviewHolder.innerText = holderValue || "Nume de pe card";
+            cardPreviewExpiry.innerText = expiryValue || "MM/YY";
+        }
+
+        cardNumberInput.addEventListener("input", function () {
+            cardNumberInput.value = formatCardNumber(cardNumberInput.value);
+            updateCardPreview();
+        });
+
+        cardExpiryInput.addEventListener("input", function () {
+            cardExpiryInput.value = formatExpiry(cardExpiryInput.value);
+            updateCardPreview();
+        });
+
+        cardCvvInput.addEventListener("input", function () {
+            cardCvvInput.value = onlyDigits(cardCvvInput.value).substring(0, 4);
+        });
+
+        cardHolderInput.addEventListener("input", updateCardPreview);
+
+        function validateExpiry(value) {
+            const match = value.match(/^(\d{2})\/(\d{2})$/);
+
+            if (!match) {
+                return false;
+            }
+
+            const month = parseInt(match[1], 10);
+            const year = parseInt("20" + match[2], 10);
+
+            if (month < 1 || month > 12) {
+                return false;
+            }
+
+            const now = new Date();
+            const currentMonth = now.getMonth() + 1;
+            const currentYear = now.getFullYear();
+
+            if (year < currentYear) {
+                return false;
+            }
+
+            if (year === currentYear && month < currentMonth) {
+                return false;
+            }
+
+            return true;
+        }
+
+        form.addEventListener("submit", function (event) {
+            const errors = [];
+
+            const holder = cardHolderInput.value.trim();
+            const cardDigits = onlyDigits(cardNumberInput.value);
+            const expiry = cardExpiryInput.value.trim();
+            const cvv = onlyDigits(cardCvvInput.value);
+
+            if (!holder) {
+                errors.push("Completează numele de pe card.");
+            }
+
+            if (cardDigits.length !== 16) {
+                errors.push("Numărul cardului trebuie să conțină 16 cifre.");
+            }
+
+            if (!validateExpiry(expiry)) {
+                errors.push("Data expirării trebuie să fie validă, în format MM/YY.");
+            }
+
+            if (cvv.length < 3 || cvv.length > 4) {
+                errors.push("CVV-ul trebuie să conțină 3 sau 4 cifre.");
+            }
+
+            if (errors.length > 0) {
+                event.preventDefault();
+
+                errorList.innerHTML = "";
+
+                errors.forEach(function (error) {
+                    const li = document.createElement("li");
+                    li.innerText = error;
+                    errorList.appendChild(li);
+                });
+
+                errorBox.style.display = "block";
+                errorBox.scrollIntoView({ behavior: "smooth", block: "center" });
+            } else {
+                errorBox.style.display = "none";
+            }
+        });
+
+        updateCardPreview();
+    });
+</script>

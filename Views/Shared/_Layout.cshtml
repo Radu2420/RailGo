@@ -1,0 +1,120 @@
+﻿<!DOCTYPE html>
+<html lang="ro" data-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>@ViewData["Title"] - RailGo</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+
+<body>
+    <div class="app-shell">
+        <header class="rg-navbar">
+            <div class="rg-navbar-inner">
+                <a class="rg-brand" asp-controller="Trips" asp-action="Search">
+                    <span class="rg-brand-mark">RG</span>
+                    <span class="rg-brand-text">RailGo</span>
+                </a>
+
+                <nav class="rg-nav-links" id="rgNavLinks">
+                    <a asp-controller="Trips" asp-action="Search">Caută trenuri</a>
+                    <a asp-controller="Tickets" asp-action="History">Istoric bilete</a>
+                    <a asp-controller="Admin" asp-action="Login">Admin</a>
+                </nav>
+
+                <div class="rg-navbar-actions">
+                    <button type="button" class="rg-theme-toggle" id="themeToggle">
+                        <span class="rg-theme-icon" id="themeIcon">☾</span>
+                        <span class="rg-theme-text" id="themeText">Dark</span>
+                    </button>
+
+                    <button type="button" class="rg-menu-btn" id="menuToggle">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="rg-main">
+            @RenderBody()
+        </main>
+
+        <footer class="rg-footer">
+            <div class="rg-footer-inner">
+                <div>
+                    <div class="rg-footer-brand">
+                        <span class="rg-brand-mark">RG</span>
+                        <span>RailGo</span>
+                    </div>
+
+                    <p>
+                        Aplicație demonstrativă pentru rezervarea biletelor feroviare, generare cod QR și administrarea rutelor.
+                    </p>
+                </div>
+
+                <div class="rg-footer-links">
+                    <a asp-controller="Trips" asp-action="Search">Caută trenuri</a>
+                    <a asp-controller="Tickets" asp-action="History">Istoric bilete</a>
+                    <a asp-controller="Admin" asp-action="Login">Admin</a>
+                </div>
+            </div>
+
+            <div class="rg-footer-bottom">
+                © 2026 RailGo · Proiect demonstrativ
+            </div>
+        </footer>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const html = document.documentElement;
+            const themeToggle = document.getElementById("themeToggle");
+            const themeIcon = document.getElementById("themeIcon");
+            const themeText = document.getElementById("themeText");
+            const menuToggle = document.getElementById("menuToggle");
+            const navLinks = document.getElementById("rgNavLinks");
+
+            const savedTheme = localStorage.getItem("railgo-theme") || "dark";
+
+            function applyTheme(theme) {
+                html.setAttribute("data-theme", theme);
+                localStorage.setItem("railgo-theme", theme);
+
+                if (theme === "light") {
+                    themeIcon.textContent = "☀";
+                    themeText.textContent = "Light";
+                } else {
+                    themeIcon.textContent = "☾";
+                    themeText.textContent = "Dark";
+                }
+            }
+
+            applyTheme(savedTheme);
+
+            if (themeToggle) {
+                themeToggle.addEventListener("click", function () {
+                    const currentTheme = html.getAttribute("data-theme");
+                    applyTheme(currentTheme === "dark" ? "light" : "dark");
+                });
+            }
+
+            if (menuToggle && navLinks) {
+                menuToggle.addEventListener("click", function () {
+                    navLinks.classList.toggle("open");
+                    menuToggle.classList.toggle("open");
+                });
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

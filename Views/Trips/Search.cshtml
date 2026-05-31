@@ -1,0 +1,793 @@
+@model RailGo.ViewModels.TripSearchViewModel
+
+@{
+    ViewData["Title"] = "Caută trenuri";
+
+    var isRoundTrip = Model.TicketType == "Dus-întors" || Model.TicketType == "Dus-Intors" || Model.TicketType == "Dus-intors";
+    var selectedClass = string.IsNullOrWhiteSpace(Model.SelectedClass) ? "Clasa a II-a" : Model.SelectedClass;
+    var defaultCarriage = selectedClass == "Clasa I" ? 1 : 2;
+}
+
+<style>
+    .home-page {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 0 18px 70px;
+    }
+
+    .home-hero {
+        position: relative;
+        overflow: hidden;
+        border-radius: 0 0 34px 34px;
+        padding: 72px 42px 126px;
+        margin-bottom: -82px;
+        color: white;
+        background:
+            radial-gradient(circle at 82% 10%, rgba(255,255,255,0.10), transparent 28%),
+            radial-gradient(circle at 16% 12%, rgba(239,35,60,0.46), transparent 34%),
+            linear-gradient(135deg, #121826 0%, #24283f 45%, #090b10 100%);
+        box-shadow: 0 30px 85px rgba(0,0,0,0.35);
+    }
+
+    .home-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 30px;
+    }
+
+    .home-logo {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+        display: grid;
+        place-items: center;
+        background: #ef233c;
+        color: white;
+        font-weight: 950;
+        letter-spacing: -0.6px;
+        box-shadow: 0 14px 30px rgba(239,35,60,0.34);
+    }
+
+    .home-brand span {
+        font-weight: 950;
+        font-size: 20px;
+    }
+
+    .home-hero h1 {
+        max-width: 740px;
+        font-size: clamp(46px, 6vw, 80px);
+        line-height: .94;
+        letter-spacing: -2.6px;
+        font-weight: 950;
+        margin-bottom: 18px;
+    }
+
+    .home-hero p {
+        max-width: 650px;
+        color: rgba(255,255,255,0.84);
+        font-size: 18px;
+        font-weight: 800;
+        margin: 0;
+    }
+
+    .search-panel {
+        position: relative;
+        z-index: 5;
+        overflow: hidden;
+        border-radius: 30px;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+            rgba(15,23,42,0.95);
+        border: 1px solid rgba(255,255,255,0.14);
+        box-shadow: 0 28px 80px rgba(0,0,0,0.34);
+        color: white;
+        margin-bottom: 28px;
+    }
+
+    .search-panel-header {
+        padding: 22px 26px;
+        background: rgba(255,255,255,0.04);
+        border-bottom: 1px solid rgba(255,255,255,0.10);
+    }
+
+    .search-panel-header h2 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 950;
+        letter-spacing: -0.7px;
+    }
+
+    .search-panel-header h2::after {
+        content: "";
+        display: block;
+        width: 76px;
+        height: 5px;
+        border-radius: 999px;
+        margin-top: 12px;
+        background: #ef233c;
+    }
+
+    .search-panel-body {
+        padding: 26px;
+    }
+
+    .route-box {
+        position: relative;
+        display: grid;
+        grid-template-columns: 1fr 54px 1fr;
+        gap: 14px;
+        align-items: end;
+        padding: 20px;
+        border-radius: 24px;
+        background: rgba(255,255,255,0.035);
+        border: 1px solid rgba(255,255,255,0.09);
+        margin-bottom: 18px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+
+    .field label {
+        display: block;
+        color: rgba(255,255,255,0.78);
+        font-weight: 950;
+        margin-bottom: 8px;
+    }
+
+    .field input,
+    .field select {
+        width: 100%;
+        height: 54px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(2,6,23,0.34);
+        color: white;
+        padding: 0 15px;
+        font-weight: 900;
+        outline: none;
+    }
+
+    .field select option {
+        color: #111827;
+    }
+
+    .field input:focus,
+    .field select:focus {
+        border-color: rgba(239,35,60,0.72);
+        box-shadow: 0 0 0 4px rgba(239,35,60,0.12);
+    }
+
+    .swap-btn {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        border: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(239,35,60,0.18);
+        color: white;
+        font-size: 20px;
+        font-weight: 950;
+        margin-bottom: 4px;
+        transition: all .18s ease;
+    }
+
+    .swap-btn:hover {
+        transform: rotate(180deg) scale(1.04);
+        background: #ef233c;
+    }
+
+    .class-toggle {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        max-width: 360px;
+        min-height: 46px;
+        border-radius: 999px;
+        padding: 4px;
+        background: rgba(255,255,255,0.08);
+        margin-bottom: 18px;
+    }
+
+    .class-toggle input {
+        display: none;
+    }
+
+    .class-toggle label {
+        display: grid;
+        place-items: center;
+        border-radius: 999px;
+        color: rgba(255,255,255,0.82);
+        font-weight: 950;
+        cursor: pointer;
+        transition: all .18s ease;
+    }
+
+    .class-toggle input:checked + label {
+        color: white;
+        background: linear-gradient(180deg, #ff304d, #e0001b);
+        box-shadow: 0 12px 26px rgba(239,35,60,0.28);
+    }
+
+    .search-btn {
+        width: 100%;
+        min-height: 64px;
+        border: 0;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ff2342, #e0001b);
+        color: white;
+        font-size: 20px;
+        font-weight: 950;
+        box-shadow: 0 18px 38px rgba(239,35,60,0.30);
+        transition: all .18s ease;
+    }
+
+    .search-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.04);
+    }
+
+    .results-title {
+        color: white;
+        font-size: 30px;
+        font-weight: 950;
+        letter-spacing: -0.7px;
+        margin: 0 0 8px;
+    }
+
+    .results-subtitle {
+        color: rgba(255,255,255,0.66);
+        font-weight: 850;
+        margin-bottom: 18px;
+    }
+
+    .results-list {
+        display: grid;
+        gap: 16px;
+        margin-bottom: 28px;
+    }
+
+    .result-card {
+        position: relative;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1.25fr 1.25fr .75fr auto;
+        gap: 18px;
+        align-items: center;
+        border-radius: 24px;
+        padding: 20px;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+            rgba(15,23,42,0.95);
+        border: 1px solid rgba(255,255,255,0.12);
+        box-shadow: 0 22px 60px rgba(0,0,0,0.22);
+        color: white;
+    }
+
+    .round-result-card {
+        grid-template-columns: 1fr 1fr .7fr auto;
+    }
+
+    .result-route {
+        font-size: 19px;
+        font-weight: 950;
+        letter-spacing: -0.4px;
+        margin-bottom: 6px;
+    }
+
+    .result-train {
+        color: rgba(255,255,255,0.62);
+        font-weight: 850;
+        font-size: 14px;
+    }
+
+    .result-detail span {
+        display: block;
+        color: rgba(255,255,255,0.50);
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        margin-bottom: 5px;
+    }
+
+    .result-detail strong {
+        display: block;
+        color: white;
+        font-weight: 950;
+    }
+
+    .price-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+        border-radius: 999px;
+        padding: 0 13px;
+        background: rgba(34,197,94,0.16);
+        border: 1px solid rgba(34,197,94,0.25);
+        color: #bbf7d0;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    .select-seat-btn {
+        min-width: 136px;
+        min-height: 52px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        background: linear-gradient(180deg, #ff2342, #e0001b);
+        color: white;
+        font-weight: 950;
+        box-shadow: 0 16px 32px rgba(239,35,60,0.28);
+        transition: all .18s ease;
+    }
+
+    .select-seat-btn:hover {
+        color: white;
+        transform: translateY(-2px);
+        filter: brightness(1.04);
+    }
+
+    .round-trip-box {
+        display: grid;
+        gap: 10px;
+    }
+
+    .trip-line {
+        border-radius: 16px;
+        padding: 14px;
+        background: rgba(255,255,255,0.045);
+        border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .trip-line-label {
+        color: rgba(255,255,255,0.56);
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        margin-bottom: 6px;
+    }
+
+    .trip-line-main {
+        font-weight: 950;
+        margin-bottom: 4px;
+    }
+
+    .trip-line-sub {
+        color: rgba(255,255,255,0.62);
+        font-weight: 850;
+        font-size: 13px;
+    }
+
+    .empty-results {
+        border-radius: 24px;
+        padding: 32px;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+            rgba(15,23,42,0.95);
+        border: 1px dashed rgba(255,255,255,0.16);
+        text-align: center;
+        color: white;
+        font-weight: 950;
+        margin-bottom: 28px;
+    }
+
+    .empty-results span {
+        display: block;
+        color: rgba(255,255,255,0.62);
+        font-size: 14px;
+        margin-top: 8px;
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    .feature-card {
+        border-radius: 24px;
+        padding: 22px;
+        background:
+            linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012)),
+            rgba(15,23,42,0.92);
+        border: 1px solid rgba(255,255,255,0.12);
+        color: white;
+    }
+
+    .feature-card h3 {
+        font-size: 19px;
+        font-weight: 950;
+        margin-bottom: 8px;
+    }
+
+    .feature-card p {
+        color: rgba(255,255,255,0.62);
+        font-weight: 800;
+        margin: 0;
+    }
+
+    @@media (max-width: 980px) {
+        .route-box,
+        .form-grid,
+        .result-card,
+        .round-result-card,
+        .feature-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .swap-btn {
+            margin: 0 auto;
+        }
+
+        .home-hero {
+            padding: 52px 26px 116px;
+        }
+    }
+</style>
+
+<div class="home-page">
+    <section class="home-hero">
+        <div class="home-brand">
+            <div class="home-logo">RG</div>
+            <span>RailGo</span>
+        </div>
+
+        <h1>Rezervă trenul potrivit fără stres.</h1>
+
+        <p>Caută ruta, alege data, selectează locul în vagon și primește biletul digital cu cod QR.</p>
+    </section>
+
+    <section class="search-panel">
+        <div class="search-panel-header">
+            <h2>Caută o conexiune</h2>
+        </div>
+
+        <div class="search-panel-body">
+            <form asp-controller="Trips" asp-action="Search" method="post">
+                <div class="route-box">
+                    <div class="field">
+                        <label asp-for="DepartureStationId">Plecare</label>
+                        <select asp-for="DepartureStationId" asp-items="Model.Stations" id="departureStation">
+                            <option value="">Alege stația de plecare</option>
+                        </select>
+                        <span asp-validation-for="DepartureStationId" class="text-danger"></span>
+                    </div>
+
+                    <button type="button" class="swap-btn" id="swapStationsBtn">⇅</button>
+
+                    <div class="field">
+                        <label asp-for="ArrivalStationId">Destinație</label>
+                        <select asp-for="ArrivalStationId" asp-items="Model.ArrivalStations" id="arrivalStation">
+                            <option value="">Alege mai întâi plecarea</option>
+                        </select>
+                        <span asp-validation-for="ArrivalStationId" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="TravelDate">Data plecării</label>
+                        <input asp-for="TravelDate" type="date" />
+                        <span asp-validation-for="TravelDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="field" id="returnDateField">
+                        <label asp-for="ReturnDate">Data întoarcerii</label>
+                        <input asp-for="ReturnDate" type="date" />
+                        <span asp-validation-for="ReturnDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="field">
+                        <label asp-for="TicketType">Tip bilet</label>
+                        <select asp-for="TicketType" id="ticketTypeSelect">
+                            <option value="Dus">Dus</option>
+                            <option value="Dus-întors">Dus-întors</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="class-toggle">
+                    <input type="radio" asp-for="SelectedClass" id="classFirst" value="Clasa I" checked="@(selectedClass == "Clasa I")" />
+                    <label for="classFirst">Clasa I</label>
+
+                    <input type="radio" asp-for="SelectedClass" id="classSecond" value="Clasa a II-a" checked="@(selectedClass == "Clasa a II-a")" />
+                    <label for="classSecond">Clasa a II-a</label>
+                </div>
+
+                <button type="submit" class="search-btn">Caută trenuri</button>
+            </form>
+        </div>
+    </section>
+
+    @if (Model.HasSearched)
+    {
+        <h2 class="results-title">Rezultate disponibile</h2>
+
+        @if (isRoundTrip)
+        {
+            <div class="results-subtitle">
+                Pentru bilet dus-întors, fiecare rezultat conține trenul de dus și trenul de întoarcere.
+            </div>
+
+            @if (Model.RoundTripResults != null && Model.RoundTripResults.Any())
+            {
+                <div class="results-list">
+                    @foreach (var result in Model.RoundTripResults)
+                    {
+                        var outbound = result.OutboundTrip;
+                        var returnTrip = result.ReturnTrip;
+
+                        if (outbound == null || returnTrip == null)
+                        {
+                            continue;
+                        }
+
+                        <article class="result-card round-result-card">
+                            <div class="round-trip-box">
+                                <div class="trip-line">
+                                    <div class="trip-line-label">Dus</div>
+                                    <div class="trip-line-main">
+                                        @outbound.RailRoute?.DepartureStation?.Name → @outbound.RailRoute?.ArrivalStation?.Name
+                                    </div>
+                                    <div class="trip-line-sub">
+                                        @outbound.Train?.Name (@outbound.Train?.TrainCode) · @outbound.DepartureTime.ToString("dd.MM.yyyy HH:mm")
+                                    </div>
+                                </div>
+
+                                <div class="trip-line">
+                                    <div class="trip-line-label">Întors</div>
+                                    <div class="trip-line-main">
+                                        @returnTrip.RailRoute?.DepartureStation?.Name → @returnTrip.RailRoute?.ArrivalStation?.Name
+                                    </div>
+                                    <div class="trip-line-sub">
+                                        @returnTrip.Train?.Name (@returnTrip.Train?.TrainCode) · @returnTrip.DepartureTime.ToString("dd.MM.yyyy HH:mm")
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="result-detail">
+                                <span>Durată dus</span>
+                                <strong>
+                                    @{
+                                        var d1 = outbound.ArrivalTime - outbound.DepartureTime;
+                                    }
+                                    @($"{(int)d1.TotalHours} h {d1.Minutes} min")
+                                </strong>
+
+                                <br />
+
+                                <span>Durată întors</span>
+                                <strong>
+                                    @{
+                                        var d2 = returnTrip.ArrivalTime - returnTrip.DepartureTime;
+                                    }
+                                    @($"{(int)d2.TotalHours} h {d2.Minutes} min")
+                                </strong>
+                            </div>
+
+                            <div class="result-detail">
+                                <span>Preț total</span>
+                                <strong class="price-pill">@result.TotalPrice.ToString("0.00") lei</strong>
+                            </div>
+
+                            <a class="select-seat-btn"
+                               asp-controller="Booking"
+                               asp-action="SelectSeat"
+                               asp-route-tripId="@outbound.Id"
+                               asp-route-returnTripId="@returnTrip.Id"
+                               asp-route-ticketType="Dus-întors"
+                               asp-route-carriageNumber="@defaultCarriage"
+                               asp-route-returnCarriageNumber="@defaultCarriage">
+                                Alege loc
+                            </a>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-results">
+                    Nu există pereche dus-întors pentru selecția curentă.
+                    <span>
+                        Ai nevoie de tren pe ruta de dus și de tren pe ruta inversă în data întoarcerii.
+                    </span>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="results-subtitle">
+                Alege trenul dorit pentru continuarea rezervării.
+            </div>
+
+            @if (Model.Results != null && Model.Results.Any())
+            {
+                <div class="results-list">
+                    @foreach (var trip in Model.Results)
+                    {
+                        var price = selectedClass == "Clasa I"
+                            ? Math.Round(trip.Price * 1.25m, 2)
+                            : trip.Price;
+
+                        var duration = trip.ArrivalTime - trip.DepartureTime;
+
+                        <article class="result-card">
+                            <div>
+                                <div class="result-route">
+                                    @trip.RailRoute?.DepartureStation?.Name → @trip.RailRoute?.ArrivalStation?.Name
+                                </div>
+
+                                <div class="result-train">
+                                    @trip.Train?.Name (@trip.Train?.TrainCode)
+                                </div>
+                            </div>
+
+                            <div class="result-detail">
+                                <span>Plecare</span>
+                                <strong>@trip.DepartureTime.ToString("dd.MM.yyyy HH:mm")</strong>
+                            </div>
+
+                            <div class="result-detail">
+                                <span>Durată</span>
+                                <strong>@($"{(int)duration.TotalHours} h {duration.Minutes} min")</strong>
+                                <br />
+                                <span>Preț</span>
+                                <strong class="price-pill">@price.ToString("0.00") lei</strong>
+                            </div>
+
+                            <a class="select-seat-btn"
+                               asp-controller="Booking"
+                               asp-action="SelectSeat"
+                               asp-route-tripId="@trip.Id"
+                               asp-route-ticketType="Dus"
+                               asp-route-carriageNumber="@defaultCarriage">
+                                Alege loc
+                            </a>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-results">
+                    Nu există rezultate pentru selecția curentă.
+                    <span>Alege o rută validă sau modifică data călătoriei.</span>
+                </div>
+            }
+        }
+    }
+
+    <section class="feature-grid">
+        <div class="feature-card">
+            <h3>Alegere loc</h3>
+            <p>Locurile ocupate sunt blocate, iar selecția se face direct pe harta vagonului.</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Bilet digital</h3>
+            <p>Fiecare rezervare generează un bilet cu cod QR unic.</p>
+        </div>
+
+        <div class="feature-card">
+            <h3>Reducere student</h3>
+            <p>Pasagerii de tip student primesc reducere aplicată automat.</p>
+        </div>
+    </section>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const ticketTypeSelect = document.getElementById("ticketTypeSelect");
+        const returnDateField = document.getElementById("returnDateField");
+        const departureSelect = document.getElementById("departureStation");
+        const arrivalSelect = document.getElementById("arrivalStation");
+        const swapButton = document.getElementById("swapStationsBtn");
+
+        const selectedArrivalFromServer = "@(Model.ArrivalStationId?.ToString() ?? "")";
+
+        function isRoundTripValue(value) {
+            return value === "Dus-întors" || value === "Dus-Intors" || value === "Dus-intors";
+        }
+
+        function toggleReturnDate() {
+            if (!ticketTypeSelect || !returnDateField) {
+                return;
+            }
+
+            returnDateField.style.display = isRoundTripValue(ticketTypeSelect.value)
+                ? "block"
+                : "none";
+        }
+
+        async function loadArrivalStations(departureId, selectedArrivalId = "") {
+            arrivalSelect.innerHTML = "";
+
+            const defaultOption = document.createElement("option");
+            defaultOption.value = "";
+
+            if (!departureId) {
+                defaultOption.textContent = "Alege mai întâi plecarea";
+                arrivalSelect.appendChild(defaultOption);
+                return;
+            }
+
+            defaultOption.textContent = "Se încarcă destinațiile...";
+            arrivalSelect.appendChild(defaultOption);
+
+            try {
+                const response = await fetch(`/Trips/GetArrivalStations?departureStationId=${departureId}`);
+                const stations = await response.json();
+
+                arrivalSelect.innerHTML = "";
+
+                const placeholder = document.createElement("option");
+                placeholder.value = "";
+                placeholder.textContent = stations.length > 0
+                    ? "Alege destinația"
+                    : "Nu există destinații disponibile";
+
+                arrivalSelect.appendChild(placeholder);
+
+                stations.forEach(function (station) {
+                    const option = document.createElement("option");
+                    option.value = station.id;
+                    option.textContent = station.name;
+
+                    if (selectedArrivalId && selectedArrivalId.toString() === station.id.toString()) {
+                        option.selected = true;
+                    }
+
+                    arrivalSelect.appendChild(option);
+                });
+            } catch {
+                arrivalSelect.innerHTML = "";
+
+                const errorOption = document.createElement("option");
+                errorOption.value = "";
+                errorOption.textContent = "Eroare la încărcarea destinațiilor";
+                arrivalSelect.appendChild(errorOption);
+            }
+        }
+
+        if (ticketTypeSelect) {
+            ticketTypeSelect.addEventListener("change", toggleReturnDate);
+            toggleReturnDate();
+        }
+
+        if (departureSelect && arrivalSelect) {
+            departureSelect.addEventListener("change", function () {
+                loadArrivalStations(departureSelect.value);
+            });
+
+            if (departureSelect.value) {
+                loadArrivalStations(departureSelect.value, selectedArrivalFromServer);
+            } else {
+                loadArrivalStations("");
+            }
+        }
+
+        if (swapButton && departureSelect && arrivalSelect) {
+            swapButton.addEventListener("click", async function () {
+                const oldDeparture = departureSelect.value;
+                const oldArrival = arrivalSelect.value;
+
+                if (!oldDeparture || !oldArrival) {
+                    return;
+                }
+
+                departureSelect.value = oldArrival;
+                await loadArrivalStations(oldArrival, oldDeparture);
+            });
+        }
+    });
+</script>
