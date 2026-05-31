@@ -34,6 +34,10 @@ Aplicația permite utilizatorului să caute trenuri disponibile, să aleagă rut
 - QRCoder
 - SMTP pentru trimiterea emailurilor
 
+## Observație privind limbajele afișate de GitHub
+
+Procentul de HTML afișat de GitHub provine în principal din fișierele Razor View (`.cshtml`) și din resursele de interfață ale aplicației. Logica principală a sistemului este implementată în C# folosind ASP.NET Core MVC, Entity Framework Core și SQL Server.
+
 ## Cerințe pentru rulare
 
 Pentru rularea aplicației sunt necesare:
