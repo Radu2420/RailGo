@@ -98,7 +98,9 @@ namespace RailGo.Controllers
 
             model.PassengerName = model.PassengerName.Trim();
             model.PassengerEmail = model.PassengerEmail.Trim();
-            model.PassengerType = string.IsNullOrWhiteSpace(model.PassengerType) ? "Adult" : model.PassengerType.Trim();
+            model.PassengerType = string.IsNullOrWhiteSpace(model.PassengerType)
+                ? "Adult"
+                : model.PassengerType.Trim();
 
             var isRoundTrip = IsRoundTrip(model.TicketType);
 
