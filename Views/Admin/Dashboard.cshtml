@@ -10,6 +10,34 @@
     var maxDailyRevenue = Model.DailyRevenue.Any()
         ? Model.DailyRevenue.Max(d => d.Revenue)
         : 1m;
+
+    var hasProfitabilityRows = Model.TripProfitabilityRows.Any();
+
+    var bestRevenueTrip = hasProfitabilityRows
+        ? Model.TripProfitabilityRows.OrderByDescending(r => r.Revenue).First()
+        : null;
+
+    var bestProfitTrip = hasProfitabilityRows
+        ? Model.TripProfitabilityRows.OrderByDescending(r => r.EstimatedProfit).First()
+        : null;
+
+    var bestOccupancyTrip = hasProfitabilityRows
+        ? Model.TripProfitabilityRows.OrderByDescending(r => r.OccupancyRate).First()
+        : null;
+
+    var profitableTrips = hasProfitabilityRows
+        ? Model.TripProfitabilityRows.Count(r => r.StatusCssClass == "profit")
+        : 0;
+
+    var riskTrips = hasProfitabilityRows
+        ? Model.TripProfitabilityRows.Count(r => r.StatusCssClass == "risk")
+        : 0;
+
+    var lossTrips = hasProfitabilityRows
+        ? Model.TripProfitabilityRows.Count(r => r.StatusCssClass == "loss")
+        : 0;
+
+    var invariantCulture = System.Globalization.CultureInfo.InvariantCulture;
 }
 
 <style>
@@ -207,26 +235,152 @@
         background: linear-gradient(90deg, #ef233c, #fb7185);
     }
 
+    .profit-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .profit-summary-card {
+        border-radius: 22px;
+        padding: 18px;
+        background: rgba(255,255,255,0.055);
+        border: 1px solid rgba(255,255,255,0.12);
+        min-height: 124px;
+    }
+
+    .profit-summary-card span {
+        display: block;
+        color: rgba(255,255,255,0.58);
+        font-size: 12px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .45px;
+        margin-bottom: 10px;
+    }
+
+    .profit-summary-card strong {
+        display: block;
+        color: white;
+        font-size: 21px;
+        line-height: 1.18;
+        font-weight: 950;
+        letter-spacing: -0.35px;
+        margin-bottom: 8px;
+    }
+
+    .profit-summary-card small {
+        display: block;
+        color: rgba(255,255,255,0.60);
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1.35;
+    }
+
+    .profit-tools {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+        margin-bottom: 18px;
+        border-radius: 22px;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.13);
+    }
+
+    .profit-tools-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .profit-tools-left,
+    .profit-tools-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .profit-tools label {
+        color: rgba(255,255,255,0.74);
+        font-size: 13px;
+        font-weight: 950;
+    }
+
+    .profit-tools input,
+    .profit-tools select {
+        min-height: 42px;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(2,6,23,0.78);
+        color: white;
+        padding: 0 14px;
+        font-weight: 850;
+        outline: none;
+    }
+
+    .profit-tools input {
+        width: 310px;
+    }
+
+    .profit-tools input::placeholder {
+        color: rgba(255,255,255,0.45);
+    }
+
+    .profit-tools button {
+        min-height: 42px;
+        border-radius: 14px;
+        padding: 0 16px;
+        color: white;
+        font-weight: 950;
+        cursor: pointer;
+        background: rgba(255,255,255,0.09);
+        border: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .profit-tools button.active,
+    .profit-tools button:hover {
+        background: linear-gradient(90deg, #ef233c, #fb7185);
+        box-shadow: 0 14px 28px rgba(239,35,60,0.22);
+    }
+
+    .profit-count {
+        color: rgba(255,255,255,0.70);
+        font-size: 13px;
+        font-weight: 900;
+    }
+
     .profit-table-wrap {
-        overflow-x: auto;
+        max-height: 470px;
+        overflow: auto;
+        border-radius: 22px;
+        border: 1px solid rgba(255,255,255,0.12);
     }
 
     .profit-table {
         width: 100%;
-        min-width: 980px;
+        min-width: 1180px;
         border-collapse: collapse;
+        margin-bottom: 0;
     }
 
     .profit-table th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
         text-align: left;
         padding: 13px 14px;
-        background: rgba(255,255,255,0.08);
-        color: rgba(255,255,255,0.72);
+        background: #273d67;
+        color: rgba(255,255,255,0.82);
         font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 0.55px;
         font-weight: 950;
-        border-bottom: 1px solid rgba(255,255,255,0.10);
+        border-bottom: 1px solid rgba(255,255,255,0.14);
+        white-space: nowrap;
     }
 
     .profit-table td {
@@ -234,6 +388,42 @@
         border-bottom: 1px solid rgba(255,255,255,0.08);
         font-weight: 800;
         vertical-align: middle;
+    }
+
+    .profit-table tbody tr:hover {
+        background: rgba(255,255,255,0.05);
+    }
+
+    .profit-table tbody tr.row-profitable {
+        box-shadow: inset 4px 0 0 rgba(34,197,94,0.75);
+    }
+
+    .profit-table tbody tr.row-risk {
+        box-shadow: inset 4px 0 0 rgba(245,158,11,0.75);
+    }
+
+    .profit-table tbody tr.row-loss {
+        box-shadow: inset 4px 0 0 rgba(239,68,68,0.75);
+    }
+
+    .profit-hidden-row {
+        display: none;
+    }
+
+    .profit-empty-message {
+        display: none;
+        margin-top: 14px;
+        padding: 18px;
+        border-radius: 18px;
+        text-align: center;
+        color: rgba(255,255,255,0.72);
+        font-weight: 900;
+        background: rgba(255,255,255,0.05);
+        border: 1px dashed rgba(255,255,255,0.15);
+    }
+
+    .profit-empty-message.show {
+        display: block;
     }
 
     .route-name {
@@ -325,14 +515,16 @@
 
     @@media (max-width: 1050px) {
         .stats-grid,
-        .admin-section-grid {
+        .admin-section-grid,
+        .profit-summary-grid {
             grid-template-columns: 1fr 1fr;
         }
     }
 
     @@media (max-width: 720px) {
         .stats-grid,
-        .admin-section-grid {
+        .admin-section-grid,
+        .profit-summary-grid {
             grid-template-columns: 1fr;
         }
 
@@ -347,6 +539,15 @@
 
         .admin-panel-header span {
             text-align: left;
+        }
+
+        .profit-tools-row,
+        .profit-tools-left,
+        .profit-tools-right,
+        .profit-tools input,
+        .profit-tools select,
+        .profit-tools button {
+            width: 100%;
         }
     }
 </style>
@@ -476,14 +677,89 @@
     <section class="admin-panel mb-4">
         <div class="admin-panel-header">
             <h2>Profitabilitatea călătoriilor</h2>
-            <span>Include gradul de ocupare și pragul de rentabilitate</span>
+            <span>Analiză pe venituri, ocupare, cost și prag de rentabilitate</span>
         </div>
 
         <div class="admin-panel-body">
             @if (Model.TripProfitabilityRows.Any())
             {
+                <div class="profit-summary-grid">
+                    <div class="profit-summary-card">
+                        <span>Cele mai mari venituri</span>
+                        <strong>@bestRevenueTrip?.RouteName</strong>
+                        <small>
+                            @bestRevenueTrip?.Revenue.ToString("0.00") lei ·
+                            @bestRevenueTrip?.TicketsSold bilete vândute
+                        </small>
+                    </div>
+
+                    <div class="profit-summary-card">
+                        <span>Cel mai bun profit estimat</span>
+                        <strong>@bestProfitTrip?.RouteName</strong>
+                        <small>
+                            @bestProfitTrip?.EstimatedProfit.ToString("0.00") lei profit estimat
+                        </small>
+                    </div>
+
+                    <div class="profit-summary-card">
+                        <span>Cea mai ocupată cursă</span>
+                        <strong>@bestOccupancyTrip?.RouteName</strong>
+                        <small>
+                            @bestOccupancyTrip?.OccupancyRate.ToString("0.00")% ocupare ·
+                            @bestOccupancyTrip?.TrainName
+                        </small>
+                    </div>
+
+                    <div class="profit-summary-card">
+                        <span>Sinteză rentabilitate</span>
+                        <strong>@profitableTrips rentabile</strong>
+                        <small>
+                            @riskTrips sub prag · @lossTrips fără vânzări
+                        </small>
+                    </div>
+                </div>
+
+                <div class="profit-tools">
+                    <div class="profit-tools-row">
+                        <div class="profit-tools-left">
+                            <label for="profitSearch">Caută</label>
+                            <input id="profitSearch" type="text" placeholder="Rută, tren, cod tren sau dată..." />
+
+                            <label for="profitSort">Sortează</label>
+                            <select id="profitSort">
+                                <option value="default">Ordine inițială</option>
+                                <option value="revenue-desc">Venituri mari → mici</option>
+                                <option value="revenue-asc">Venituri mici → mari</option>
+                                <option value="profit-desc">Profit mare → mic</option>
+                                <option value="profit-asc">Profit mic → mare</option>
+                                <option value="occupancy-desc">Ocupare mare → mică</option>
+                                <option value="occupancy-asc">Ocupare mică → mare</option>
+                                <option value="tickets-desc">Bilete vândute multe → puține</option>
+                                <option value="tickets-asc">Bilete vândute puține → multe</option>
+                                <option value="threshold-desc">Prag profit mare → mic</option>
+                                <option value="threshold-asc">Prag profit mic → mare</option>
+                                <option value="status">Status rentabilitate</option>
+                            </select>
+                        </div>
+
+                        <div class="profit-tools-right">
+                            <span class="profit-count" id="profitCount"></span>
+                            <button type="button" id="profitReset">Resetează</button>
+                        </div>
+                    </div>
+
+                    <div class="profit-tools-row">
+                        <div class="profit-tools-left">
+                            <button type="button" class="profit-filter active" data-filter="all">Toate cursele</button>
+                            <button type="button" class="profit-filter" data-filter="profit">Rentabile</button>
+                            <button type="button" class="profit-filter" data-filter="risk">Sub prag</button>
+                            <button type="button" class="profit-filter" data-filter="loss">Fără vânzări</button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="profit-table-wrap">
-                    <table class="profit-table">
+                    <table class="profit-table" id="profitabilityTable">
                         <thead>
                             <tr>
                                 <th>Rută</th>
@@ -501,9 +777,29 @@
                         </thead>
 
                         <tbody>
+                            @{
+                                var index = 0;
+                            }
+
                             @foreach (var row in Model.TripProfitabilityRows)
                             {
-                                <tr>
+                                var rowClass = row.StatusCssClass == "profit"
+                                    ? "row-profitable"
+                                    : row.StatusCssClass == "risk"
+                                        ? "row-risk"
+                                        : "row-loss";
+
+                                var searchText = $"{row.RouteName} {row.TrainName} {row.TrainCode} {row.DepartureTime:dd.MM.yyyy HH:mm} {row.Status}";
+
+                                <tr class="@rowClass"
+                                    data-index="@index"
+                                    data-search="@searchText"
+                                    data-revenue="@row.Revenue.ToString(invariantCulture)"
+                                    data-profit="@row.EstimatedProfit.ToString(invariantCulture)"
+                                    data-occupancy="@row.OccupancyRate.ToString(invariantCulture)"
+                                    data-sold="@row.TicketsSold"
+                                    data-threshold="@row.BreakEvenOccupancyRate.ToString(invariantCulture)"
+                                    data-status="@row.StatusCssClass">
                                     <td>
                                         <div class="route-name">@row.RouteName</div>
                                     </td>
@@ -527,9 +823,15 @@
                                         </span>
                                     </td>
                                 </tr>
+
+                                index++;
                             }
                         </tbody>
                     </table>
+                </div>
+
+                <div class="profit-empty-message" id="profitEmptyMessage">
+                    Nu există rezultate pentru filtrarea aleasă.
                 </div>
             }
             else
@@ -579,3 +881,139 @@
         </div>
     </section>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const table = document.getElementById("profitabilityTable");
+
+        if (!table) {
+            return;
+        }
+
+        const tbody = table.querySelector("tbody");
+        const searchInput = document.getElementById("profitSearch");
+        const sortSelect = document.getElementById("profitSort");
+        const resetButton = document.getElementById("profitReset");
+        const countLabel = document.getElementById("profitCount");
+        const emptyMessage = document.getElementById("profitEmptyMessage");
+        const filterButtons = Array.from(document.querySelectorAll(".profit-filter"));
+
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        let activeFilter = "all";
+
+        function normalizeText(value) {
+            return (value || "")
+                .toString()
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function numberValue(row, attribute) {
+            const value = parseFloat(row.dataset[attribute]);
+
+            return isNaN(value) ? 0 : value;
+        }
+
+        function statusRank(row) {
+            if (row.dataset.status === "risk") {
+                return 1;
+            }
+
+            if (row.dataset.status === "loss") {
+                return 2;
+            }
+
+            return 3;
+        }
+
+        function applyTableState() {
+            const searchValue = normalizeText(searchInput.value);
+            const sortValue = sortSelect.value;
+
+            rows.forEach(row => {
+                const rowText = normalizeText(row.dataset.search);
+                const matchesSearch = rowText.includes(searchValue);
+                const matchesFilter = activeFilter === "all" || row.dataset.status === activeFilter;
+
+                row.classList.toggle("profit-hidden-row", !(matchesSearch && matchesFilter));
+            });
+
+            const sortedRows = rows.slice();
+
+            sortedRows.sort((a, b) => {
+                switch (sortValue) {
+                    case "revenue-desc":
+                        return numberValue(b, "revenue") - numberValue(a, "revenue");
+
+                    case "revenue-asc":
+                        return numberValue(a, "revenue") - numberValue(b, "revenue");
+
+                    case "profit-desc":
+                        return numberValue(b, "profit") - numberValue(a, "profit");
+
+                    case "profit-asc":
+                        return numberValue(a, "profit") - numberValue(b, "profit");
+
+                    case "occupancy-desc":
+                        return numberValue(b, "occupancy") - numberValue(a, "occupancy");
+
+                    case "occupancy-asc":
+                        return numberValue(a, "occupancy") - numberValue(b, "occupancy");
+
+                    case "tickets-desc":
+                        return numberValue(b, "sold") - numberValue(a, "sold");
+
+                    case "tickets-asc":
+                        return numberValue(a, "sold") - numberValue(b, "sold");
+
+                    case "threshold-desc":
+                        return numberValue(b, "threshold") - numberValue(a, "threshold");
+
+                    case "threshold-asc":
+                        return numberValue(a, "threshold") - numberValue(b, "threshold");
+
+                    case "status":
+                        return statusRank(a) - statusRank(b);
+
+                    default:
+                        return numberValue(a, "index") - numberValue(b, "index");
+                }
+            });
+
+            sortedRows.forEach(row => tbody.appendChild(row));
+
+            const visibleRows = rows.filter(row => !row.classList.contains("profit-hidden-row"));
+
+            countLabel.innerText = `${visibleRows.length} curse afișate`;
+            emptyMessage.classList.toggle("show", visibleRows.length === 0);
+        }
+
+        searchInput.addEventListener("input", applyTableState);
+        sortSelect.addEventListener("change", applyTableState);
+
+        filterButtons.forEach(button => {
+            button.addEventListener("click", function () {
+                activeFilter = button.dataset.filter;
+
+                filterButtons.forEach(btn => btn.classList.remove("active"));
+                button.classList.add("active");
+
+                applyTableState();
+            });
+        });
+
+        resetButton.addEventListener("click", function () {
+            searchInput.value = "";
+            sortSelect.value = "default";
+            activeFilter = "all";
+
+            filterButtons.forEach(btn => btn.classList.remove("active"));
+            document.querySelector('.profit-filter[data-filter="all"]').classList.add("active");
+
+            applyTableState();
+        });
+
+        applyTableState();
+    });
+</script>
